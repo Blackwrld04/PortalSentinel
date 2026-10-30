@@ -3,6 +3,10 @@
 > **Built for Portaldot Hacker House 2026 (Track 3: Node Operations & Tooling)**  
 > *Autonomous front-running defense, zero-custody security scoping, and live telemetry for Portaldot V3 (`pallet-revive`).*
 
+[![CI](https://github.com/blackwrld04/PortalSentinel/actions/workflows/ci.yml/badge.svg)](https://github.com/blackwrld04/PortalSentinel/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Network: Portaldot V3](https://img.shields.io/badge/Network-Portaldot%20V3%20(420420777)-purple.svg)](https://node-console.portaldot.dev/)
+
 ---
 
 ## 🌟 Overview
@@ -13,6 +17,7 @@ When DeFi protocols, routers, or validators are exploited, malicious actors drai
 * **Real-Time Threat Detection:** Listens continuously to Portaldot V3 block streams (`pallet-revive` EVM RPC + Substrate WebSocket).
 * **Front-Running Autonomous Defense:** When an anomalous outflow, unverified drainer, or slashing event is detected, PortalSentinel dispatches an emergency transaction with **$1.35\times$ priority gas** to front-run the attacker.
 * **Zero-Custody Guarantee:** The Sentinel Guardian agent is **non-custodial** by smart contract invariant. It can *only* zero out allowances (`executeEmergencyBatchRevoke`) or sweep tokens to the user’s pre-registered cold vault (`executeEmergencySweep`). It can never touch or withdraw funds to itself.
+* **Node Operations & Tooling Suite:** Built-in CLI tool for node operators to probe RPC latency, inspect contract bytecodes, verify allowance vulnerabilities, and benchmark network throughput.
 
 ---
 
@@ -21,7 +26,7 @@ When DeFi protocols, routers, or validators are exploited, malicious actors drai
 ```
 ┌────────────────────────────────────────────────────────┐
 │         LAYER 4: COMMAND CENTER & TELEMETRY UI         │
-│  • Next.js / Vite + React 18 + Lucide                  │
+│  • Next.js / Vite + React 18 + Tailwind + Lucide Icons │
 │  • Active Approvals Scanner & 1-Click Shield Opt-in    │
 │  • Interactive "Simulate Exploit Attack" Sandbox       │
 └───────────────────────────┬────────────────────────────┘
@@ -32,6 +37,7 @@ When DeFi protocols, routers, or validators are exploited, malicious actors drai
 │  • Dual-RPC Stream Listener (EVM + Substrate)          │
 │  • Threat Scoring Engine (Outflow velocity & signatures)
 │  • Priority Fee Escalator & High-Speed Dispatcher      │
+│  • Node Operations CLI Tooling (Health, Audit, Matrix) │
 └───────────────────────────┬────────────────────────────┘
                             │ (High-Priority Emergency Tx)
                             ▼
@@ -56,39 +62,53 @@ When DeFi protocols, routers, or validators are exploited, malicious actors drai
 
 ---
 
-## 🚀 Quickstart Guide
+## 🛠️ Quickstart (Root Commands)
 
-### 1. Smart Contracts (Foundry)
+You can manage the entire stack from the root directory:
+
 ```bash
-cd contracts
+# 1. Run smart contract test suite (Foundry)
+npm run test
 
-# Run all 6 automated invariant and security tests
-forge test -v
+# 2. Run threat detection & attack simulation harness
+npm run test:daemon
 
-# Build deployment artifacts
-forge build
+# 3. Probe Portaldot V3 EVM & Substrate node health
+npm run cli:health
+
+# 4. Benchmark RPC latency across 5 consecutive queries
+npm run cli:benchmark
+
+# 5. View autonomous threat scoring matrix
+npm run cli:matrix
+
+# 6. Build production bundles (contracts + daemon + frontend)
+npm run build
+
+# 7. Start frontend command center (http://localhost:3000)
+npm run dev
 ```
 
-### 2. Sentinel Watcher Daemon
+---
+
+## 🧰 Node Operations & Tooling CLI
+
+PortalSentinel includes a purpose-built CLI tool (`sentinel`) in `daemon/`:
+
 ```bash
 cd daemon
 
-# Run the live testnet attack simulation harness
-npm run simulate
+# Check Portaldot Node & EVM RPC Telemetry
+npm run cli health
 
-# Start continuous block stream monitor
-npm start
-```
+# Audit an address or contract for vulnerabilities & allowances
+npm run cli audit 0xa46d82dC1Af617e1c8112e8EAc71D4cB586ceE47
 
-### 3. Frontend Command Center & Sandbox
-```bash
-cd frontend
+# Benchmark RPC latency & connection stability
+npm run cli benchmark
 
-# Run local development server (http://localhost:3000)
-npm run dev
-
-# Or build for production
-npm run build
+# View threat scoring rules & sensitivity thresholds
+npm run cli matrix
 ```
 
 ---
@@ -96,7 +116,7 @@ npm run build
 ## 🧪 Interactive Hackathon Judge Sandbox
 
 Judges can verify the closed-loop defense mechanism in under 60 seconds:
-1. Open the Frontend Command Center or run `npm run simulate` in `daemon/`.
+1. Open the Frontend Command Center (`npm run dev`) or run `npm run test:daemon`.
 2. Click **[🚨 Simulate Exploit Attack on Testnet]**.
 3. Watch the 4-step sequence:
    * **Step 01:** Attacker initiates `transferFrom` drain attempt.
@@ -109,4 +129,4 @@ Judges can verify the closed-loop defense mechanism in under 60 seconds:
 
 ## 📑 Verifiable On-Chain Proofs
 
-See [`docs/PROOF.md`](docs/PROOF.md) for full testnet verification instructions, curl terminal queries, and contract addresses.
+See [`docs/PROOF.md`](docs/PROOF.md) for full testnet verification instructions, curl terminal queries, contract addresses, and test output.

@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "description": "Autonomous threat detection & closed-loop defense dispatcher for Portaldot V3",
   "main": "src/index.ts",
+  "bin": {
+    "sentinel": "src/cli.ts"
+  },
   "scripts": {
     "start": "tsx src/index.ts",
     "simulate": "tsx src/simulateAttack.ts",
+    "cli": "tsx src/cli.ts",
     "build": "tsc"
   },
   "dependencies": {

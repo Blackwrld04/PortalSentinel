@@ -1,3 +1,8 @@
+import dns from "node:dns";
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
+
 import { ethers } from "ethers";
 import { CONFIG } from "./config.js";
 import { ThreatSignal } from "./threatScorer.js";
@@ -12,7 +17,9 @@ export class BlockStreamListener {
 
   constructor() {
     const staticNet = new ethers.Network(CONFIG.network.name, CONFIG.network.chainId);
-    this.provider = new ethers.JsonRpcProvider(CONFIG.network.rpcUrl, staticNet, { staticNetwork: staticNet });
+    const req = new ethers.FetchRequest(CONFIG.network.rpcUrl);
+    req.timeout = 10000;
+    this.provider = new ethers.JsonRpcProvider(req, staticNet, { staticNetwork: staticNet });
   }
 
   public async start(onSignal: ThreatSignalCallback) {
@@ -58,9 +65,6 @@ export class BlockStreamListener {
 
   private async processBlock(blockNumber: number) {
     try {
-      const block = await this.provider.getBlock(blockNumber, true);
-      if (!block) return;
-
       const filter = {
         fromBlock: blockNumber,
         toBlock: blockNumber

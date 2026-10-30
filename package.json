@@ -1,0 +1,32 @@
+{
+  "name": "portal-sentinel",
+  "version": "1.0.0",
+  "description": "Autonomous On-Chain Security Firewall & Circuit Breaker for Portaldot V3 EVM",
+  "scripts": {
+    "test": "cd contracts && forge test -vvv",
+    "test:daemon": "cd daemon && npm run simulate",
+    "build:contracts": "cd contracts && forge build",
+    "build:daemon": "cd daemon && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:contracts && npm run build:daemon && npm run build:frontend",
+    "dev": "cd frontend && npm run dev",
+    "cli:health": "cd daemon && npm run cli health",
+    "cli:benchmark": "cd daemon && npm run cli benchmark",
+    "cli:matrix": "cd daemon && npm run cli matrix",
+    "daemon": "cd daemon && npm start"
+  },
+  "keywords": [
+    "portaldot",
+    "polkavm",
+    "pallet-revive",
+    "security",
+    "circuit-breaker",
+    "firewall",
+    "evm",
+    "solidity",
+    "foundry",
+    "dorahacks"
+  ],
+  "author": "PortalSentinel Core Team",
+  "license": "MIT"
+}
