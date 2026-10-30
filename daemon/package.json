@@ -1,0 +1,20 @@
+{
+  "name": "portal-sentinel-daemon",
+  "version": "1.0.0",
+  "description": "Autonomous threat detection & closed-loop defense dispatcher for Portaldot V3",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "simulate": "tsx src/simulateAttack.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
