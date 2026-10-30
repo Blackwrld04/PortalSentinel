@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --bg-dark: #080C14;
+  --card-bg: #0D1424;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --primary-emerald: #10B981;
+  --primary-cyan: #06B6D4;
+  --alert-red: #EF4444;
+  --warning-amber: #F59E0B;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-dark);
+  color: #F1F5F9;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+.mono-font {
+  font-family: var(--font-mono);
+}
+
+/* Glassmorphism Card */
+.glass-panel {
+  background: rgba(13, 20, 36, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.glass-panel-glow {
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+}
+
+/* Cyber Pulse Animation */
+@keyframes radar-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 0.4; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.animate-radar {
+  animation: radar-pulse 3s infinite ease-in-out;
+}
+
+/* Subtle Grid Background */
+.bg-grid {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
