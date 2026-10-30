@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.local
+out/
+cache/
+dist/
+.next/
+*.log
+broadcast/
