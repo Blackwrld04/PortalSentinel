@@ -277,7 +277,7 @@ export default function App() {
               </div>
 
               {/* Big Animated Sentinel Guardian (••) with Blinking & Tracking Eyes */}
-              <div style={{ flex: "0 0 auto", display: "flex", justifyContent: "center", alignItems: "center", margin: "10px auto" }}>
+              <div style={{ flex: "0 0 auto", display: "flex", justifyContent: "center", alignItems: "center", marginLeft: "auto", marginRight: "20px", transform: "translateX(25px)" }}>
                 <SentinelGuardian
                   size={310}
                   simStep={simStep}
