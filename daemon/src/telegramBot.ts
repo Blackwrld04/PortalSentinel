@@ -54,18 +54,23 @@ export class TelegramBotService {
   }
 
   private async pollUpdates() {
-    const url = `https://api.telegram.org/bot${this.botToken}/getUpdates?offset=${this.lastUpdateId + 1}&timeout=20`;
-    const res = await fetch(url);
-    const data = await res.json();
+    const url = `https://api.telegram.org/bot${this.botToken}/getUpdates?offset=${this.lastUpdateId + 1}&timeout=2`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
 
-    if (!data.ok || !data.result) return;
-
-    for (const update of data.result) {
-      this.lastUpdateId = update.update_id;
-      if (update.message && update.message.text) {
-        await this.handleMessage(update.message);
+      if (data.ok && Array.isArray(data.result)) {
+        for (const update of data.result) {
+          this.lastUpdateId = update.update_id;
+          if (update.message && update.message.text) {
+            await this.handleMessage(update.message);
+          }
+        }
       }
+    } catch (err: any) {
+      // Ignore transient network errors, will retry in next loop iteration
     }
+    await new Promise((r) => setTimeout(r, 2000));
   }
 
   private async handleMessage(message: any) {

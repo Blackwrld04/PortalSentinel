@@ -73,9 +73,28 @@ export default function App() {
   const [lastTxHash, setLastTxHash] = useState<string>("");
 
   // Telegram 24/7 Mobile Alert State
-  const [telegramHandle, setTelegramHandle] = useState("@blackwrld04");
-  const [telegramChatId, setTelegramChatId] = useState("953892253");
-  const [telegramSaved, setTelegramSaved] = useState(false);
+  const [telegramHandle, setTelegramHandle] = useState("@Blackwrld04");
+  const [telegramChatId, setTelegramChatId] = useState("6755373105");
+  const [telegramSaved, setTelegramSaved] = useState(true);
+  const TELEGRAM_BOT_TOKEN = "9138469919:AAHPtIu6kBqusj29nf9-6UQ-4yy82q-5iSQ";
+
+  const dispatchLiveTelegram = async (text: string) => {
+    if (!telegramChatId) return;
+    try {
+      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: telegramChatId,
+          text,
+          parse_mode: "HTML",
+          disable_web_page_preview: true
+        })
+      });
+    } catch (e) {
+      console.warn("Direct Telegram dispatch:", e);
+    }
+  };
   const [telegramNotifyDrain, setTelegramNotifyDrain] = useState(true);
   const [telegramNotifySuspicious, setTelegramNotifySuspicious] = useState(true);
   const [telegramNotifyDaily, setTelegramNotifyDaily] = useState(false);
@@ -319,6 +338,16 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
     setTestAlertSent(true);
     setTelegramAlertPulse(true);
     addLog(`[TELEGRAM BOT] Dispatched test security ping to ${telegramHandle} (${telegramChatId}). Push delivery verified!`);
+
+    dispatchLiveTelegram(
+      `<b>[PORTALSENTINEL BOT — TEST SECURITY PING]</b>\n\n` +
+      `<b>Status:</b> ACTIVE & ARMED\n` +
+      `<b>Bound Target:</b> ${telegramHandle} (ID: <code>${telegramChatId}</code>)\n` +
+      `<b>Monitored Address:</b> <code>${userAddress}</code>\n` +
+      `<b>Network:</b> Portaldot V3 EVM (Chain ID: 420420777)\n\n` +
+      `<i>Your Telegram is linked to PortalSentinel. You will receive instant alerts whenever suspicious approvals or drain calls are detected.</i>`
+    );
+
     setTimeout(() => {
       setTestAlertSent(false);
       setTelegramAlertPulse(false);
@@ -371,6 +400,17 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
     addLog("[SUCCESS] Capital preserved! Attacker front-ran. Allowance zeroed before drain finalized.");
     setTelegramAlertPulse(true);
     addLog(`[TELEGRAM BOT] Dispatched instant exploit alert to ${telegramHandle}: 5,000 pUSD preserved in 14ms!`);
+
+    dispatchLiveTelegram(
+      `<b>[EXPLOIT INTERCEPTED — CAPITAL PRESERVED]</b>\n\n` +
+      `<b>Victim Wallet:</b> <code>${userAddress}</code>\n` +
+      `<b>Preserved Capital:</b> <b>5,000 pUSD</b>\n` +
+      `<b>Defense Action:</b> Emergency Front-Run Revoke (Gas Escalated 1.35x)\n` +
+      `<b>Preemption Latency:</b> <b>14 ms</b>\n` +
+      `<b>Tx Hash:</b> <code>${mockHash}</code>\n\n` +
+      `<a href="https://node-console.portaldot.dev/">View on Portaldot Node Console</a>\n\n` +
+      `<i>Attacker was front-ran before transaction mined. Funds remain 100% safe.</i>`
+    );
     setTimeout(() => setTelegramAlertPulse(false), 5000);
     setIsSimulating(false);
 
@@ -974,9 +1014,15 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                   <span className="mono" style={{ fontSize: "12px", color: "#dfbc97", display: "inline-flex", alignItems: "center", gap: "6px" }}>
                     <Bot size={13} color="#dfbc97" /> TELEGRAM BOT CONFIGURATION
                   </span>
-                  <span className="mono" style={{ fontSize: "11px", color: "#24a1de" }}>
-                    @PortalSentinelAlertsBot
-                  </span>
+                  <a 
+                    href="https://t.me/PortalSentinel_Alerts_bot" 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="mono" 
+                    style={{ fontSize: "11px", color: "#24a1de", textDecoration: "none" }}
+                  >
+                    @PortalSentinel_Alerts_bot ↗
+                  </a>
                 </div>
 
                 {/* Form to bind chat ID */}
@@ -1169,7 +1215,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                       color: "#fff",
                       fontWeight: "bold"
                     }}>
-                      ••
+                      PB
                     </div>
                     <div>
                       <div style={{ fontSize: "12px", fontWeight: "bold", color: "#fff" }}>PortalSentinel Bot</div>
