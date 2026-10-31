@@ -803,41 +803,6 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                 </div>
               </div>
 
-              {/* Native Substrate SS58 Identity Card (DoraHacks & Faucet Anchor) */}
-              <div style={{ background: "rgba(255, 106, 26, 0.05)", border: "1px solid rgba(255, 106, 26, 0.25)", padding: "14px 18px", marginBottom: "25px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "6px" }}>
-                  <span className="mono" style={{ fontSize: "11px", color: "#ff8638", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                    <ShieldCheck size={13} color="#ff8638" /> PORTALDOT V3 NATIVE SUBSTRATE IDENTITY (SS58)
-                  </span>
-                  <span className="mono" style={{ fontSize: "10px", color: "#78e9c4", background: "rgba(120, 233, 196, 0.1)", padding: "2px 8px" }}>
-                    pallet-revive COMPATIBLE
-                  </span>
-                </div>
-                <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-                  <code className="mono" style={{ flex: 1, background: "#0a080d", border: "1px solid var(--line)", padding: "8px 12px", color: "#dfbc97", fontSize: "11px", wordBreak: "break-all" }}>
-                    {ss58Address}
-                  </code>
-                  <button 
-                    onClick={handleCopySS58}
-                    className="outline-button"
-                    style={{ padding: "8px 12px", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "5px" }}
-                  >
-                    {copiedSS58 ? <Check size={11} color="#78e9c4" /> : <Copy size={11} />}
-                    {copiedSS58 ? "COPIED" : "COPY SS58"}
-                  </button>
-                  <button 
-                    onClick={handleCopyFaucetTemplate}
-                    className="outline-button launch"
-                    style={{ padding: "8px 12px", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "5px" }}
-                  >
-                    {copiedTemplate ? <Check size={11} color="#78e9c4" /> : <Send size={11} />}
-                    {copiedTemplate ? "TEMPLATE COPIED" : "COPY FAUCET DM TEMPLATE"}
-                  </button>
-                </div>
-                <div style={{ fontSize: "10px", color: "#8b8985", marginTop: "8px", lineHeight: 1.4 }}>
-                  Use this address for Portaldot Discord token distribution (`/testnet-faucet` or DM admin @Stella707827 / @titus242471). Mandatory gas token for DoraHacks Track 3 on-chain transactions.
-                </div>
-              </div>
 
               {/* On-Chain Arm Vault Trigger */}
               <div style={{ marginBottom: "25px", display: "flex", flexWrap: "wrap", gap: "15px", alignItems: "center" }}>
