@@ -123,3 +123,31 @@
   padding: 3px 8px;
   font: 10px Courier New, monospace;
 }
+
+/* Sentinel Guardian Robot Animations */
+@keyframes sentinel-float {
+  0%, 100% {
+    transform: translateY(-8px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(8px) rotate(1.2deg);
+  }
+}
+
+@keyframes sentinel-orbit-cw {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sentinel-orbit-ccw {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
