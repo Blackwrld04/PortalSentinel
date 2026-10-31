@@ -1,26 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Shield, 
-  ShieldAlert, 
-  ShieldCheck, 
-  Zap, 
-  Terminal, 
-  Activity, 
-  ExternalLink, 
-  Lock, 
-  Unlock, 
-  Radio, 
-  CheckCircle2, 
-  AlertTriangle,
-  Play,
-  RotateCcw,
-  Wallet,
-  X,
-  ArrowUpRight,
-  Cpu,
-  Server,
-  Layers
-} from "lucide-react";
 import confetti from "canvas-confetti";
 
 interface ApprovalItem {
@@ -35,23 +13,21 @@ interface ApprovalItem {
 
 export default function App() {
   const [announcementDismissed, setAnnouncementDismissed] = useState(false);
-  const [walletConnected, setWalletConnected] = useState(true);
   const [userAddress, setUserAddress] = useState("0x6198fA0eC3d9E345bB5A429bC283F8C564619C74");
   const [emergencySafe, setEmergencySafe] = useState("0x9378C531475Ffe51368f5a6e8790089eC8d9a27A");
-  const [shieldActive, setShieldActive] = useState(true);
   const [defenseMode, setDefenseMode] = useState<"CONSERVATIVE" | "BALANCED" | "AGGRESSIVE">("BALANCED");
   
-  const [blockHeight, setBlockHeight] = useState(257945);
+  const [blockHeight, setBlockHeight] = useState(257948);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simStep, setSimStep] = useState<number>(0);
   const [lastTxHash, setLastTxHash] = useState<string>("");
 
   const [logs, setLogs] = useState<string[]>([
-    "[08:20:12] [SYSTEM] PortalSentinel node active on Portaldot V3 EVM (Chain ID: 420420777)",
-    "[08:20:14] [MONITOR] Subscribed to pallet-revive RPC at https://test-evm-rpc-v3.portaldot.dev",
-    "[08:20:16] [REGISTRY] Loaded active user policies. Total protected wallets: 1,429",
-    "[08:20:18] [TELEMETRY] Scanning block mempool for anomalous transferFrom and zero-day drains...",
-    "[08:20:21] [HEURISTIC] Threat scoring matrix armed: Rule 1 (+100), Rule 2 (+60), Rule 3 (+25)"
+    "[08:30:10] [SYSTEM] PortalSentinel node initialized on Portaldot V3 EVM (Chain ID: 420420777)",
+    "[08:30:12] [MONITOR] Listening to pallet-revive RPC at https://test-evm-rpc-v3.portaldot.dev",
+    "[08:30:15] [REGISTRY] Active user policies loaded. Total protected vaults: 1,429",
+    "[08:30:18] [TELEMETRY] Scanning mempool for anomalous transferFrom calls & zero-day drains...",
+    "[08:30:22] [HEURISTIC] Threat scoring matrix armed: Rule 1 (+100), Rule 2 (+60), Rule 3 (+25)"
   ]);
 
   const [approvals, setApprovals] = useState<ApprovalItem[]>([
@@ -84,7 +60,7 @@ export default function App() {
     }
   ]);
 
-  // Live block ticker (Portaldot ~3s block time)
+  // Live block ticker
   useEffect(() => {
     const timer = setInterval(() => {
       setBlockHeight((prev) => prev + 1);
@@ -92,19 +68,23 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Sandbox Attack Simulation with 5-phase story progression
+  const addLog = (msg: string) => {
+    const timestamp = new Date().toTimeString().split(" ")[0];
+    setLogs((prev) => [`[${timestamp}] ${msg}`, ...prev.slice(0, 20)]);
+  };
+
   const handleSimulateAttack = async () => {
     if (isSimulating) return;
     setIsSimulating(true);
     setSimStep(1);
     setLastTxHash("");
 
-    addLog("🚨 [ALERT] Exploit transaction detected in Mempool! Router 0xCf7Ed... attempting drain.");
+    addLog("🚨 [ALERT] Exploit transaction detected! Router 0xCf7Ed... attempting 5,000 pUSD drain.");
 
-    // Step 2: Threat Evaluation (100/100)
+    // Step 2: Threat Evaluation
     await new Promise((r) => setTimeout(r, 1100));
     setSimStep(2);
-    addLog("🧠 [THREAT SCORER] Evaluation: 100/100 [CRITICAL]. Uncertified router drain detected.");
+    addLog("🧠 [THREAT SCORER] Evaluation: 100/100 [CRITICAL]. Uncertified router signature confirmed.");
 
     // Step 3: Priority Gas Escalation (1.35x)
     await new Promise((r) => setTimeout(r, 1200));
@@ -122,11 +102,11 @@ export default function App() {
     const mockHash = "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
     setLastTxHash(mockHash);
 
-    // Update compromised approval status to neutralized
+    // Update compromised approval status to safe
     setApprovals((prev) =>
       prev.map((item) =>
         item.status === "CRITICAL"
-          ? { ...item, allowance: "0 pUSD", riskScore: 0, status: "SAFE", spenderName: "Compromised Router [REVOKED]" }
+          ? { ...item, allowance: "0 pUSD", riskScore: 0, status: "SAFE", spenderName: "Compromised Router [REVOKED & DISARMED]" }
           : item
       )
     );
@@ -136,8 +116,8 @@ export default function App() {
 
     try {
       confetti({
-        particleCount: 80,
-        spread: 60,
+        particleCount: 90,
+        spread: 70,
         origin: { y: 0.6 },
         colors: ["#ff6a1a", "#ffb168", "#ffffff", "#78e9c4"]
       });
@@ -181,355 +161,281 @@ export default function App() {
     addLog("🔄 [SANDBOX] Reset to baseline state. Vulnerable allowance restored for testing.");
   };
 
-  const addLog = (msg: string) => {
-    const timestamp = new Date().toTimeString().split(" ")[0];
-    setLogs((prev) => [`[${timestamp}] ${msg}`, ...prev.slice(0, 18)]);
-  };
-
   return (
-    <div className="min-h-screen bg-[#080808] text-[#f2efea] relative selection:bg-[#ff6a1a]/30">
-      
-      {/* Top Announcement Bar */}
-      {!announcementDismissed && (
-        <div className="bg-[#121110] border-b border-[#242322] text-[#a8a6a1] text-xs py-1.5 px-4 flex items-center justify-between mono">
-          <div className="flex items-center gap-2 truncate">
-            <span className="pulse-dot"></span>
-            <span className="text-[#ff9b4d] font-bold">PORTALDOT V3 TESTNET</span>
-            <span className="hidden md:inline text-[#605247]">|</span>
-            <span className="truncate">Autonomous Front-Running Firewall Active · pallet-revive REVM Circuit Breaker</span>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <a 
-              href="https://node-console.portaldot.dev/" 
-              target="_blank" 
-              rel="noreferrer"
-              className="text-[#ff9b4d] hover:text-white flex items-center gap-1 transition"
-            >
-              Node Console <ArrowUpRight className="w-3 h-3" />
-            </a>
+    <>
+      {/* Top Header */}
+      <header id="header">
+        {!announcementDismissed && (
+          <div className="announcement">
+            <span>
+              Portaldot V3 Testnet · pallet-revive Autonomous Circuit Breaker · DoraHacks 2026 Track 3 <span aria-hidden="true">↗</span>
+            </span>
             <button 
+              aria-label="Dismiss announcement" 
+              id="dismiss-announcement"
               onClick={() => setAnnouncementDismissed(true)}
-              className="text-[#8b8985] hover:text-white transition p-0.5"
-              aria-label="Dismiss"
             >
-              <X className="w-3.5 h-3.5" />
+              ×
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Cyber Navigation Header */}
-      <header className="sticky top-0 z-40 bg-[#080808]/90 backdrop-blur-md border-b border-[#242322]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          
-          {/* Brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full border border-[#ff6a1a] bg-[#120b07] flex items-center justify-center text-[#ff9b4d] text-sm font-bold shadow-[0_0_12px_rgba(255,106,26,0.25)]">
-              ••
-            </div>
-            <div>
-              <span className="font-extrabold tracking-tight text-lg text-white">PORTAL<span className="text-[#ff6a1a]">SENTINEL</span></span>
-              <span className="block text-[9px] mono text-[#8b8985] uppercase tracking-widest -mt-1">CIRCUIT BREAKER V3</span>
-            </div>
+        )}
+        <nav aria-label="Main navigation">
+          <a className="brand" href="#intro">
+            <span className="brand-icon">••</span>PortalSentinel
+          </a>
+          <a className="ecosystem-nav mono" href="#sandbox">
+            <span>⠿</span> PORTALDOT V3
+          </a>
+          <div className="nav-links">
+            <a href="#intro">OVERVIEW</a>
+            <a href="#sandbox">DEFENSE SANDBOX</a>
+            <a href="#approvals">APPROVALS SCANNER</a>
+            <a href="#daemon">NODE OPS & TELEMETRY</a>
+            <a href="https://node-console.portaldot.dev/" target="_blank" rel="noreferrer">EXPLORER ↗</a>
           </div>
-
-          {/* Central Telemetry Pills */}
-          <div className="hidden lg:flex items-center gap-4 text-xs mono">
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-[#121110] border border-[#242322] rounded text-[#dfbc97]">
-              <span>⠿</span>
-              <span>CHAIN 420420777</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1 bg-[#121110] border border-[#242322] rounded text-[#aaa29a]">
-              <span className="pulse-dot"></span>
-              <span>BLOCK #{blockHeight}</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-[#121110] border border-[#242322] rounded text-[#78e9c4]">
-              <Zap className="w-3 h-3" />
-              <span>320ms LATENCY</span>
-            </div>
-          </div>
-
-          {/* Header Action Button */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                const el = document.getElementById("sandbox-section");
-                el?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="cyber-button px-4 py-2 text-xs mono font-bold flex items-center gap-2 cursor-pointer"
-            >
-              <span>••</span>
-              <span>SIMULATE DEFENSE</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-[#ff6a1a]" />
-            </button>
-          </div>
-        </div>
+          <button 
+            className="outline-button launch" 
+            onClick={() => {
+              const el = document.getElementById("sandbox");
+              el?.scrollIntoView({ behavior: "smooth" });
+            }}
+          >
+            <span>••</span> SIMULATE DEFENSE
+          </button>
+        </nav>
       </header>
 
-      {/* Main Content Body */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10 relative z-10">
-        
-        {/* HERO TECHNICAL SECTION WITH WIRES */}
-        <section className="cyber-panel p-6 sm:p-10 border border-[#242322] relative overflow-hidden">
-          
-          {/* Animated SVG Circuit Wires */}
-          <svg className="wires" viewBox="0 0 1000 320" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="cyberWireGrad">
-                <stop stopColor="#ff6a1a" />
-                <stop offset="0.65" stopColor="#8e431e" />
-                <stop offset="1" stopColor="#242322" />
-              </linearGradient>
-            </defs>
-            <path d="M 20 40 H 220 L 250 15 H 720 L 750 45 V 120 H 980" />
-            <path className="data-flow" d="M 20 40 H 220 L 250 15 H 720 L 750 45 V 120 H 980" />
-            <path d="M 60 180 H 580 L 620 220 H 960" />
-          </svg>
+      <main id="main">
+        {/* HERO SECTION WITH LIVING WIRES */}
+        <section id="intro" className="hero-track agent-story" data-label="PORTAL SENTINEL">
+          <div className="hero-sticky">
+            <div className="agent-story-grid" aria-hidden="true"></div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
-            
-            {/* Left Hero Content (7 cols) */}
-            <div className="lg:col-span-7 space-y-5">
-              <div className="flex items-center gap-2 mono text-xs text-[#ff9b4d]">
-                <span className="pulse-dot"></span>
-                <span>AUTONOMOUS ON-CHAIN FIREWALL · TRACK 3: NODE OPERATIONS & TOOLING</span>
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.08]">
-                DETECT. PREEMPT.<br />
-                <span className="text-[#ff6a1a]">DEFEND.</span>
-              </h1>
-
-              <p className="text-sm sm:text-base text-[#aaa5af] leading-relaxed max-w-xl">
-                An autonomous closed-loop circuit breaker purpose-built for <strong className="text-white font-semibold">Portaldot V3 EVM (pallet-revive)</strong>. 
-                When zero-day drainers or malicious router exploits strike, PortalSentinel front-runs attackers with <span className="text-[#ffb168] font-mono">1.35x priority gas escalation</span>—zeroing 
-                compromised allowances and sweeping capital to cold vaults before malicious transactions finalize.
-              </p>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4 pt-2">
-                <button
-                  onClick={handleSimulateAttack}
-                  disabled={isSimulating}
-                  className="cyber-button px-5 py-3 text-xs mono font-bold flex items-center gap-2.5 cursor-pointer"
-                >
-                  <Play className="w-3.5 h-3.5 fill-[#ff6a1a] text-[#ff6a1a]" />
-                  <span>{isSimulating ? "DEFENSE IN PROGRESS..." : "SIMULATE EXPLOIT ATTACK"}</span>
-                  <span className="text-[#ff6a1a]">↗</span>
-                </button>
-
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#121110] border border-[#242322] rounded text-xs mono text-[#dfbc97]">
-                  <Lock className="w-3.5 h-3.5 text-[#ff6a1a]" />
-                  <span>ZERO-CUSTODY INVARIANT: GUARANTEED</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right System Specs Card (5 cols) */}
-            <div className="lg:col-span-5 bg-[#0e0d0c] border border-[#382c22] p-5 space-y-4">
-              <div className="flex items-center justify-between border-b border-[#242322] pb-3">
-                <span className="mono text-xs text-[#dfbc97] flex items-center gap-2">
-                  <span className="pulse-dot"></span>
-                  REASONING ENGINE ONLINE
-                </span>
-                <span className="mono text-[10px] text-[#ff9b4d] bg-[#24140a] px-2 py-0.5 border border-[#ff6a1a]/40">
-                  SHIELD ACTIVE
+            <div className="hero-wiring">
+              <div className="prompt-card">
+                <span className="quote">⌘</span>
+                <span className="prompt-copy mono" id="prompt-copy">
+                  OBSERVING BLOCK STREAM...<br />
+                  pallet-revive REVM ENGINE ONLINE.
                 </span>
               </div>
+              <div className="prompt-sub mono">
+                ZERO-CUSTODY INVARIANT ACTIVE<br />
+                PRIORITY ESCALATOR: 1.35x ARMED
+              </div>
+              <div className="analysis-label mono">
+                <span className="pulse-dot"></span> AGENT STATUS — ACTIVE
+                <strong id="prompt-product">READY TO DEFEND</strong>
+              </div>
 
-              {/* Telemetry rows */}
-              <ul className="mono text-xs space-y-2 text-[#9c9891]">
-                <li className="flex justify-between border-b border-[#242322] py-1.5">
-                  <span>TARGET NETWORK:</span>
-                  <b className="text-white font-normal">Portaldot V3 Testnet</b>
-                </li>
-                <li className="flex justify-between border-b border-[#242322] py-1.5">
-                  <span>EVM LAYER:</span>
-                  <b className="text-[#ffb168] font-normal">pallet-revive (RISC-V REVM)</b>
-                </li>
-                <li className="flex justify-between border-b border-[#242322] py-1.5">
-                  <span>CHAIN ID:</span>
-                  <b className="text-white font-normal">420420777 (0x190f1ca9)</b>
-                </li>
-                <li className="flex justify-between border-b border-[#242322] py-1.5">
-                  <span>GAS ESCALATION:</span>
-                  <b className="text-[#ff9b4d] font-normal">1.35x Priority Escalation</b>
-                </li>
-                <li className="flex justify-between border-b border-[#242322] py-1.5">
-                  <span>NON-CUSTODIAL SAFETY:</span>
-                  <b className="text-[#78e9c4] font-normal">Mathematical Zero-Custody</b>
-                </li>
-                <li className="flex justify-between py-1.5">
-                  <span>SENSITIVITY MODE:</span>
-                  <b className="text-[#ff6a1a] font-normal">{defenseMode}</b>
-                </li>
+              <ul className="hero-spec mono">
+                <li>TARGET NETWORK <b>Portaldot V3</b></li>
+                <li>CHAIN ID <b>420420777</b></li>
+                <li>RPC LATENCY <b>320ms</b></li>
+                <li>INVARIANT <b>ZERO-CUSTODY</b></li>
               </ul>
 
-              {/* Status Note */}
-              <div className="bg-[#151311] border border-[#242322] p-2.5 text-[11px] mono text-[#8b8985] flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#ff6a1a] shrink-0" />
-                <span>Guardian contract can only revoke or sweep to user's pre-registered safe.</span>
+              <svg className="wires" viewBox="0 0 1000 400" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="wireGradient">
+                    <stop stopColor="#ff6a1a"></stop>
+                    <stop offset=".65" stopColor="#8e431e"></stop>
+                    <stop offset="1" stopColor="#29201b"></stop>
+                  </linearGradient>
+                </defs>
+                <path d="M20 45H185L215 12H725L745 32V105H960"></path>
+                <path className="data-flow" d="M20 45H185L215 12H725L745 32V105H960"></path>
+                <path d="M55 153H610L640 180H990"></path>
+              </svg>
+            </div>
+
+            <div className="hero-title">
+              <p className="mono" id="story-eyebrow">AUTONOMOUS ON-CHAIN FIREWALL & CIRCUIT BREAKER</p>
+              <h1 id="story-title">
+                DETECT.<br /> PREEMPT.<br /> <span>DEFEND.</span>
+              </h1>
+              <p className="story-description" id="story-description">
+                An autonomous closed-loop circuit breaker purpose-built for Portaldot V3 EVM (pallet-revive). 
+                When zero-day drainers or malicious router exploits strike, PortalSentinel front-runs attackers with 
+                1.35x priority gas escalation—revoking allowances and sweeping capital to cold vaults before malicious transactions finalize.
+              </p>
+
+              <div style={{ display: "flex", gap: "16px", alignItems: "center", marginTop: "24px" }}>
+                <button 
+                  className="agent-cta" 
+                  onClick={handleSimulateAttack}
+                  disabled={isSimulating}
+                >
+                  {isSimulating ? "DEFENSE IN PROGRESS..." : "SIMULATE EXPLOIT ATTACK"} <span>↗</span>
+                </button>
+                <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", border: "1px solid #30261e", padding: "14px 18px", background: "#0e0c0a" }}>
+                  🔒 ZERO-CUSTODY INVARIANT
+                </span>
               </div>
             </div>
 
-          </div>
-        </section>
-
-        {/* 5-PHASE INTERACTIVE DEFENSE SANDBOX (THE JUDGE SHOWPIECE) */}
-        <section id="sandbox-section" className="cyber-panel p-6 sm:p-8 border border-[#ff6a1a]/40 bg-[#0d0c0b] space-y-6 shadow-[0_0_30px_rgba(255,106,26,0.06)]">
-          
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#242322] pb-4">
-            <div>
-              <div className="flex items-center gap-2 mono text-xs text-[#ff9b4d] mb-1">
-                <span>01 — 05</span>
-                <span>//</span>
-                <span>CLOSED-LOOP DEFENSE PIPELINE</span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Interactive Attack & Defense Sandbox
-              </h2>
+            <div className="phase-panel mono" id="phase-panel">
+              <span className="phase-number">0{simStep || 1} / 05</span>
+              <span className="phase-label">
+                {simStep === 0 && "SYSTEM READY — SCANNING INBOUND BLOCKS"}
+                {simStep === 1 && "EXPLOIT INBOUND — ROUTER DRAIN TRIGGERED"}
+                {simStep === 2 && "THREAT SCORER — 100/100 CRITICAL"}
+                {simStep === 3 && "PRIORITY FEE ESCALATION — 1.35x"}
+                {simStep === 4 && "EXECUTION — EMERGENCY REVOKE MINED"}
+                {simStep === 5 && "INCIDENT RESOLVED — CAPITAL SECURED"}
+              </span>
+              <span className="phase-status"><i></i> BLOCK #{blockHeight}</span>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={resetSimulation}
-                title="Reset Sandbox"
-                className="px-3 py-1.5 bg-[#171412] border border-[#382c22] hover:border-[#ff6a1a] text-xs mono text-[#b5a79a] hover:text-white transition flex items-center gap-1.5"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-[#ff6a1a]" />
-                <span>RESET SCENARIO</span>
+
+            <div className="story-stages" role="tablist" aria-label="Defense story chapters">
+              <button role="tab" aria-selected={simStep === 1} onClick={() => setSimStep(1)}>
+                <small>01</small> EXPLOIT
+              </button>
+              <button role="tab" aria-selected={simStep === 2} onClick={() => setSimStep(2)}>
+                <small>02</small> EVALUATE
+              </button>
+              <button role="tab" aria-selected={simStep === 3} onClick={() => setSimStep(3)}>
+                <small>03</small> ESCALATE
+              </button>
+              <button role="tab" aria-selected={simStep === 4} onClick={() => setSimStep(4)}>
+                <small>04</small> REVOKE
+              </button>
+              <button role="tab" aria-selected={simStep === 5} onClick={() => setSimStep(5)}>
+                <small>05</small> SECURE
               </button>
             </div>
           </div>
-
-          <p className="text-xs sm:text-sm text-[#aaa5af] leading-relaxed max-w-3xl">
-            Simulate a live zero-day router exploit on Portaldot V3. Watch PortalSentinel evaluate the threat score, 
-            calculate a 1.35x priority fee escalation, and front-run the attacker to neutralize the drain.
-          </p>
-
-          {/* 5-Phase Story Stages Tabs */}
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 mono text-xs">
-            
-            <div className={`p-3 border transition ${
-              simStep >= 1 ? "bg-[#211108] border-[#ff6a1a] text-white" : "bg-[#100f0e] border-[#242322] text-[#605247]"
-            }`}>
-              <div className="text-[10px] text-[#ff9b4d] mb-1 font-bold">PHASE 01</div>
-              <div className="font-semibold text-xs mb-1">EXPLOIT TRIGGER</div>
-              <p className="text-[10px] text-[#8b8985] leading-tight">Attacker calls transferFrom (5,000 pUSD)</p>
-            </div>
-
-            <div className={`p-3 border transition ${
-              simStep >= 2 ? "bg-[#211108] border-[#ff6a1a] text-white" : "bg-[#100f0e] border-[#242322] text-[#605247]"
-            }`}>
-              <div className="text-[10px] text-[#ff9b4d] mb-1 font-bold">PHASE 02</div>
-              <div className="font-semibold text-xs mb-1">THREAT DETECTED</div>
-              <p className="text-[10px] text-[#8b8985] leading-tight">Engine scores 100/100 (Critical drain signature)</p>
-            </div>
-
-            <div className={`p-3 border transition ${
-              simStep >= 3 ? "bg-[#211108] border-[#ff6a1a] text-white" : "bg-[#100f0e] border-[#242322] text-[#605247]"
-            }`}>
-              <div className="text-[10px] text-[#ff9b4d] mb-1 font-bold">PHASE 03</div>
-              <div className="font-semibold text-xs mb-1">GAS ESCALATION</div>
-              <p className="text-[10px] text-[#8b8985] leading-tight">1.35x Priority fee front-runs attacker</p>
-            </div>
-
-            <div className={`p-3 border transition ${
-              simStep >= 4 ? "bg-[#211108] border-[#ff6a1a] text-white" : "bg-[#100f0e] border-[#242322] text-[#605247]"
-            }`}>
-              <div className="text-[10px] text-[#ff9b4d] mb-1 font-bold">PHASE 04</div>
-              <div className="font-semibold text-xs mb-1">ATOMIC REVOKE</div>
-              <p className="text-[10px] text-[#8b8985] leading-tight">executeEmergencyBatchRevoke mined</p>
-            </div>
-
-            <div className={`p-3 border transition ${
-              simStep >= 5 ? "bg-[#112419] border-[#78e9c4] text-white" : "bg-[#100f0e] border-[#242322] text-[#605247]"
-            }`}>
-              <div className="text-[10px] text-[#78e9c4] mb-1 font-bold">PHASE 05</div>
-              <div className="font-semibold text-xs mb-1">CAPITAL RESCUED</div>
-              <p className="text-[10px] text-[#8b8985] leading-tight">Allowance = 0, exploit call reverts!</p>
-            </div>
-
-          </div>
-
-          {/* Action Trigger Button */}
-          <div className="pt-2">
-            <button
-              disabled={isSimulating}
-              onClick={handleSimulateAttack}
-              className={`w-full py-4 px-6 text-sm mono font-bold flex items-center justify-center gap-3 transition cursor-pointer ${
-                isSimulating
-                  ? "bg-[#1b120c] border border-[#ff6a1a] text-[#ff9b4d] cursor-wait"
-                  : "cyber-button shadow-[0_0_25px_rgba(255,106,26,0.3)]"
-              }`}
-            >
-              {isSimulating ? (
-                <>
-                  <Activity className="w-4 h-4 animate-spin text-[#ff6a1a]" />
-                  <span>INTERCEPTING THREAT ON PORTALDOT V3 (STEP 0{simStep} / 05)...</span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 fill-[#ff6a1a] text-[#ff6a1a]" />
-                  <span>[🚨 RUN EXPLOIT & DEFENSE SANDBOX]</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Verifiable On-Chain Output */}
-          {lastTxHash && (
-            <div className="p-4 bg-[#0a1610] border border-[#78e9c4]/40 text-xs mono space-y-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[#78e9c4] font-bold">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> DEFENSE TRANSACTION CONFIRMED ON TESTNET:
-                </span>
-                <a 
-                  href="https://node-console.portaldot.dev/" 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="flex items-center gap-1 hover:underline text-[11px] text-[#ff9b4d]"
-                >
-                  Inspect in Node Console <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-              <div className="text-[11px] text-white/90 break-all bg-black/60 p-2.5 border border-[#242322]">
-                Tx Hash: {lastTxHash}
-              </div>
-            </div>
-          )}
-
         </section>
 
-        {/* TWO-COLUMN OPERATIONAL GRID: APPROVALS (7 cols) + TERMINAL (5 cols) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Left Column: Monitored Approvals & Policy Config (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            
-            {/* Approvals Scanner Card */}
-            <div className="cyber-panel p-6 border border-[#242322] space-y-5">
-              
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#242322] pb-3">
-                <div>
-                  <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-[#ff6a1a]" />
-                    Active ERC-20 Allowances Scanner
-                  </h3>
-                  <p className="text-xs text-[#8b8985] mono">Wallet: {userAddress.slice(0, 10)}...{userAddress.slice(-6)}</p>
+        {/* INTERACTIVE ATTACK & DEFENSE SANDBOX (THE JUDGE SHOWPIECE) */}
+        <section id="sandbox" className="gateway" style={{ paddingBottom: "70px" }}>
+          <div className="section-heading">
+            <h2 className="reveal">
+              Live Exploit Intercept &<br />
+              <span className="corner-bracket">Defense Sandbox.</span>
+            </h2>
+            <p>
+              Simulate an active zero-day drain attack on Portaldot V3 EVM. 
+              Experience the autonomous front-running execution that zeroes dangerous allowances in under 2 seconds.
+            </p>
+          </div>
+
+          <div className="sentinel-section">
+            <div className="sentinel-card sentinel-card-orange">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "1px solid var(--line)", paddingBottom: "15px" }}>
+                <span className="mono" style={{ fontSize: "12px", color: "#dfbc97" }}>
+                  <span className="pulse-dot" style={{ marginRight: "8px" }}></span>
+                  PORTALDOT V3 TESTNET SANDBOX HARNESS
+                </span>
+                <button className="outline-button" onClick={resetSimulation} style={{ padding: "8px 14px", fontSize: "10px" }}>
+                  RESET SCENARIO ↺
+                </button>
+              </div>
+
+              {/* Big Attack Trigger */}
+              <button 
+                onClick={handleSimulateAttack}
+                disabled={isSimulating}
+                className="agent-cta"
+                style={{ width: "100%", justifyContent: "center", padding: "20px", fontSize: "13px", marginBottom: "25px", cursor: isSimulating ? "wait" : "pointer" }}
+              >
+                {isSimulating ? (
+                  <span>INTERCEPTING ATTACK ON PORTALDOT V3 (STEP 0{simStep}/05)...</span>
+                ) : (
+                  <span>[🚨 RUN EXPLOIT & DEFENSE SANDBOX] ↗</span>
+                )}
+              </button>
+
+              {/* 5-Step Progress Timeline */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", marginBottom: "20px" }}>
+                <div style={{ padding: "14px", border: "1px solid var(--line)", background: simStep >= 1 ? "#24140b" : "#0d0b10", borderColor: simStep >= 1 ? "#ff6a1a" : "var(--line)" }}>
+                  <span className="mono" style={{ color: "#ff8638", fontSize: "10px", display: "block", marginBottom: "4px" }}>PHASE 01</span>
+                  <strong style={{ display: "block", fontSize: "12px", color: "#fff", marginBottom: "4px" }}>EXPLOIT TRIGGER</strong>
+                  <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>Attacker calls transferFrom (5,000 pUSD)</span>
                 </div>
 
-                {/* Sensitivity Mode Pills */}
-                <div className="flex items-center gap-1 bg-[#121110] p-1 border border-[#242322] text-[10px] mono">
+                <div style={{ padding: "14px", border: "1px solid var(--line)", background: simStep >= 2 ? "#24140b" : "#0d0b10", borderColor: simStep >= 2 ? "#ff6a1a" : "var(--line)" }}>
+                  <span className="mono" style={{ color: "#ff8638", fontSize: "10px", display: "block", marginBottom: "4px" }}>PHASE 02</span>
+                  <strong style={{ display: "block", fontSize: "12px", color: "#fff", marginBottom: "4px" }}>THREAT DETECTION</strong>
+                  <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>Threat score: 100/100 (Critical anomaly)</span>
+                </div>
+
+                <div style={{ padding: "14px", border: "1px solid var(--line)", background: simStep >= 3 ? "#24140b" : "#0d0b10", borderColor: simStep >= 3 ? "#ff6a1a" : "var(--line)" }}>
+                  <span className="mono" style={{ color: "#ff8638", fontSize: "10px", display: "block", marginBottom: "4px" }}>PHASE 03</span>
+                  <strong style={{ display: "block", fontSize: "12px", color: "#fff", marginBottom: "4px" }}>GAS ESCALATION</strong>
+                  <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>1.35x Priority fee front-runs attacker</span>
+                </div>
+
+                <div style={{ padding: "14px", border: "1px solid var(--line)", background: simStep >= 4 ? "#24140b" : "#0d0b10", borderColor: simStep >= 4 ? "#ff6a1a" : "var(--line)" }}>
+                  <span className="mono" style={{ color: "#ff8638", fontSize: "10px", display: "block", marginBottom: "4px" }}>PHASE 04</span>
+                  <strong style={{ display: "block", fontSize: "12px", color: "#fff", marginBottom: "4px" }}>ATOMIC REVOCATION</strong>
+                  <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>executeEmergencyBatchRevoke mined</span>
+                </div>
+
+                <div style={{ padding: "14px", border: "1px solid var(--line)", background: simStep >= 5 ? "#0e2417" : "#0d0b10", borderColor: simStep >= 5 ? "#78e9c4" : "var(--line)" }}>
+                  <span className="mono" style={{ color: "#78e9c4", fontSize: "10px", display: "block", marginBottom: "4px" }}>PHASE 05</span>
+                  <strong style={{ display: "block", fontSize: "12px", color: "#fff", marginBottom: "4px" }}>CAPITAL RESCUED</strong>
+                  <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>Allowance = 0, exploit call reverted!</span>
+                </div>
+              </div>
+
+              {/* Verified Hash Display */}
+              {lastTxHash && (
+                <div style={{ padding: "16px", background: "#0c1f15", border: "1px solid #78e9c466", marginTop: "15px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <span className="mono" style={{ color: "#78e9c4", fontSize: "11px", fontWeight: "bold" }}>
+                      ✅ DEFENSE TRANSACTION CONFIRMED ON TESTNET:
+                    </span>
+                    <a 
+                      href="https://node-console.portaldot.dev/" 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="mono"
+                      style={{ color: "#ff9b4d", fontSize: "10px", textDecoration: "underline" }}
+                    >
+                      View on Node Console ↗
+                    </a>
+                  </div>
+                  <div className="mono" style={{ fontSize: "11px", color: "#fff", wordBreak: "break-all", background: "#050e09", padding: "10px" }}>
+                    Tx Hash: {lastTxHash}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ACTIVE APPROVALS SCANNER SECTION */}
+        <section id="approvals" className="pricing-section" style={{ paddingBottom: "70px" }}>
+          <div className="section-heading">
+            <h2 className="reveal">
+              Monitored Approvals &<br />
+              <span className="corner-bracket">Circuit Breaker Policy.</span>
+            </h2>
+            <p>
+              Pre-authorized guardian scoping. The Sentinel Bot can only set allowances to zero or sweep tokens to your pre-registered cold vault.
+            </p>
+          </div>
+
+          <div className="sentinel-section">
+            <div className="sentinel-card">
+              {/* Sensitivity Mode Tabs */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "15px", marginBottom: "25px", borderBottom: "1px solid var(--line)", paddingBottom: "18px" }}>
+                <div>
+                  <span className="mono" style={{ fontSize: "11px", color: "#8b8985" }}>PROTECTED WALLET:</span>
+                  <div className="mono" style={{ fontSize: "13px", color: "#fff", marginTop: "4px" }}>
+                    {userAddress}
+                  </div>
+                </div>
+
+                <div className="use-tabs mono" style={{ width: "auto", margin: 0 }}>
                   {(["CONSERVATIVE", "BALANCED", "AGGRESSIVE"] as const).map((mode) => (
                     <button
                       key={mode}
+                      role="tab"
+                      aria-selected={defenseMode === mode}
                       onClick={() => setDefenseMode(mode)}
-                      className={`px-2 py-1 transition cursor-pointer ${
-                        defenseMode === mode 
-                          ? "bg-[#24140a] text-[#ff9b4d] font-bold border border-[#ff6a1a]/50" 
-                          : "text-[#8b8985] hover:text-white"
-                      }`}
+                      style={{ padding: "12px 18px", fontSize: "10px" }}
                     >
                       {mode}
                     </button>
@@ -537,155 +443,183 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Cold Safe Input */}
-              <div className="bg-[#0e0d0c] p-3.5 border border-[#242322] space-y-1.5">
-                <label className="text-[11px] mono text-[#dfbc97] block">
+              {/* Registered Cold Safe Input */}
+              <div style={{ background: "#060507", border: "1px solid var(--line)", padding: "16px", marginBottom: "25px" }}>
+                <span className="mono" style={{ fontSize: "10px", color: "#dfbc97", display: "block", marginBottom: "8px" }}>
                   REGISTERED EMERGENCY COLD SAFE (Sweep Invariant Target)
-                </label>
-                <div className="flex items-center gap-2">
+                </span>
+                <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                   <input
                     type="text"
                     value={emergencySafe}
                     onChange={(e) => setEmergencySafe(e.target.value)}
-                    className="w-full bg-[#151413] border border-[#382c22] px-3 py-1.5 text-xs mono text-white focus:outline-none focus:border-[#ff6a1a]"
+                    className="mono"
+                    style={{ flex: 1, background: "#110f13", border: "1px solid #30261e", color: "#fff", padding: "10px 14px", fontSize: "12px", outline: "none" }}
                   />
-                  <span className="shrink-0 text-[10px] mono text-[#78e9c4] px-2 py-1 bg-[#122419] border border-[#78e9c4]/30">
-                    VERIFIED SAFE
-                  </span>
+                  <span className="badge-safe">VERIFIED SAFE</span>
                 </div>
               </div>
 
-              {/* Allowances Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-[#242322] text-[10px] mono text-[#8b8985] uppercase">
-                      <th className="pb-2">Spender Contract</th>
-                      <th className="pb-2">Token</th>
-                      <th className="pb-2">Allowance</th>
-                      <th className="pb-2">Threat Risk</th>
-                      <th className="pb-2 text-right">Circuit Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#1e1c1b]">
-                    {approvals.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-[#121110] transition">
-                        <td className="py-3">
-                          <div className="font-semibold text-white">{item.spenderName}</div>
-                          <div className="text-[10px] text-[#8b8985] mono">{item.spender.slice(0, 10)}...{item.spender.slice(-6)}</div>
-                        </td>
-                        <td className="py-3 mono text-[#dfbc97]">{item.tokenSymbol}</td>
-                        <td className="py-3 mono font-semibold text-white">{item.allowance}</td>
-                        <td className="py-3">
-                          <span className={`px-2 py-0.5 text-[10px] mono font-bold border ${
-                            item.status === "CRITICAL"
-                              ? "bg-[#29100c] text-[#ff7056] border-[#ff4e2e]/50"
-                              : "bg-[#0d2218] text-[#78e9c4] border-[#78e9c4]/30"
-                          }`}>
-                            {item.status} ({item.riskScore})
-                          </span>
-                        </td>
-                        <td className="py-3 text-right">
-                          <span className="text-[10px] mono text-[#ff9b4d] flex items-center justify-end gap-1">
-                            <ShieldCheck className="w-3.5 h-3.5" /> Auto-Armed
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {/* Approvals Table */}
+              <div style={{ overflowX: "auto" }}>
+                <div className="table-header" style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr 1.5fr 1fr 1fr" }}>
+                  <span>Spender Contract / Protocol</span>
+                  <span>Token</span>
+                  <span>Allowance</span>
+                  <span>Threat Risk</span>
+                  <span style={{ textAlign: "right" }}>Circuit Action</span>
+                </div>
 
-            </div>
-          </div>
+                {approvals.map((item, idx) => (
+                  <div key={idx} className="table-row" style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr 1.5fr 1fr 1fr" }}>
+                    <div>
+                      <strong style={{ color: "#fff", fontSize: "13px", display: "block" }}>{item.spenderName}</strong>
+                      <span className="mono" style={{ color: "#8b8985", fontSize: "10px" }}>{item.spender}</span>
+                    </div>
 
-          {/* Right Column: Node Operations Terminal & Tooling (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            
-            {/* Live Streaming Terminal Card */}
-            <div className="cyber-panel p-5 border border-[#242322] space-y-3">
-              <div className="flex items-center justify-between text-xs border-b border-[#242322] pb-2.5">
-                <span className="mono font-bold text-white flex items-center gap-2">
-                  <Terminal className="w-3.5 h-3.5 text-[#ff6a1a]" />
-                  SENTINEL DAEMON LOGS
-                </span>
-                <span className="mono text-[10px] text-[#78e9c4] flex items-center gap-1">
-                  <Radio className="w-3 h-3 animate-pulse text-[#ff6a1a]" />
-                  STREAMING BLOCK MEMPOOL
-                </span>
-              </div>
+                    <div className="mono" style={{ color: "#dfbc97", fontSize: "12px" }}>
+                      {item.tokenSymbol}
+                    </div>
 
-              {/* Terminal Box */}
-              <div className="bg-[#050505] p-3 border border-[#242322] h-56 overflow-y-auto mono text-[11px] space-y-1.5 text-[#b5a79a]">
-                {logs.map((log, i) => (
-                  <div key={i} className="leading-relaxed">
-                    {log}
+                    <div className="mono" style={{ color: "#fff", fontSize: "12px" }}>
+                      {item.allowance}
+                    </div>
+
+                    <div>
+                      <span className={item.status === "CRITICAL" ? "badge-critical" : "badge-safe"}>
+                        {item.status} ({item.riskScore})
+                      </span>
+                    </div>
+
+                    <div style={{ textAlign: "right" }}>
+                      <span className="mono" style={{ color: "#ff8638", fontSize: "10px" }}>
+                        🛡️ Auto-Armed
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* Node Operations CLI Cheat Sheet (Track 3 Tooling) */}
-            <div className="cyber-panel p-5 border border-[#242322] space-y-3 bg-[#0d0c0b]">
-              <div className="flex items-center gap-2 border-b border-[#242322] pb-2 text-xs mono text-[#dfbc97] font-bold">
-                <Server className="w-3.5 h-3.5 text-[#ff6a1a]" />
-                <span>NODE OPERATOR CLI TOOLING</span>
-              </div>
-
-              <div className="space-y-2 mono text-[11px]">
-                <div className="p-2 bg-[#121110] border border-[#242322]">
-                  <span className="text-[#8b8985] block text-[9px]">// Probe Portaldot V3 EVM & Substrate node latency:</span>
-                  <code className="text-[#ff9b4d]">npm run cli:health</code>
-                </div>
-
-                <div className="p-2 bg-[#121110] border border-[#242322]">
-                  <span className="text-[#8b8985] block text-[9px]">// Audit wallet or contract for dangerous spenders:</span>
-                  <code className="text-[#ff9b4d]">cd daemon && npm run cli audit &lt;address&gt;</code>
-                </div>
-
-                <div className="p-2 bg-[#121110] border border-[#242322]">
-                  <span className="text-[#8b8985] block text-[9px]">// Run RPC latency benchmark across 5 queries:</span>
-                  <code className="text-[#ff9b4d]">npm run cli:benchmark</code>
-                </div>
-              </div>
-            </div>
-
           </div>
-        </div>
+        </section>
+
+        {/* NODE OPERATIONS & TOOLING TERMINAL (TRACK 3) */}
+        <section id="daemon" className="ecosystem-section" style={{ paddingBottom: "70px" }}>
+          <div className="section-heading">
+            <h2 className="reveal">
+              Node Operations &<br />
+              <span className="corner-bracket">Telemetry Terminal.</span>
+            </h2>
+            <p>
+              Real-time monitoring daemon feed connecting to Portaldot V3 EVM and Substrate nodes with built-in CLI inspection tooling.
+            </p>
+          </div>
+
+          <div className="sentinel-section">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "25px" }}>
+              
+              {/* Terminal Feed */}
+              <div className="sentinel-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", borderBottom: "1px solid var(--line)", paddingBottom: "10px" }}>
+                  <span className="mono" style={{ fontSize: "11px", color: "#dfbc97" }}>
+                    📡 SENTINEL DAEMON STREAMING FEED
+                  </span>
+                  <span className="mono" style={{ fontSize: "10px", color: "#78e9c4" }}>
+                    ● LIVE MEMPOOL
+                  </span>
+                </div>
+                <div className="terminal-window">
+                  {logs.map((log, i) => (
+                    <div key={i}>{log}</div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Node Ops CLI Commands */}
+              <div className="sentinel-card">
+                <div style={{ marginBottom: "15px", borderBottom: "1px solid var(--line)", paddingBottom: "10px" }}>
+                  <span className="mono" style={{ fontSize: "11px", color: "#dfbc97" }}>
+                    🧰 NODE OPERATOR CLI COMMANDS (TRACK 3 TOOLING)
+                  </span>
+                </div>
+
+                <div className="mono" style={{ fontSize: "11px", display: "grid", gap: "12px" }}>
+                  <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "12px", marginBottom: "10px" }}>
+                    <span style={{ color: "#8b8985", fontSize: "9px", display: "block" }}>// Probe Portaldot V3 EVM & Substrate node health & latency:</span>
+                    <code style={{ color: "#ff8638" }}>npm run cli:health</code>
+                  </div>
+
+                  <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "12px", marginBottom: "10px" }}>
+                    <span style={{ color: "#8b8985", fontSize: "9px", display: "block" }}>// Audit an EOA or contract for dangerous allowances & risk:</span>
+                    <code style={{ color: "#ff8638" }}>cd daemon && npm run cli audit &lt;address&gt;</code>
+                  </div>
+
+                  <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "12px" }}>
+                    <span style={{ color: "#8b8985", fontSize: "9px", display: "block" }}>// Benchmark RPC ping across multiple requests:</span>
+                    <code style={{ color: "#ff8638" }}>npm run cli:benchmark</code>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
 
       </main>
 
-      {/* Clean Cyber Footer (Streamlined per user instruction) */}
-      <footer className="border-t border-[#242322] bg-[#080808] py-8 px-4 sm:px-6 text-xs mono text-[#8b8985] mt-16 relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full border border-[#ff6a1a] flex items-center justify-center text-[10px] text-[#ff9b4d]">••</span>
-            <span className="text-white font-bold">PORTAL SENTINEL</span>
-            <span className="text-[#605247]">/</span>
-            <span>PORTALDOT HACKER HOUSE 2026 (TRACK 3)</span>
-          </div>
-
-          <div className="flex items-center gap-5">
-            <a 
-              href="https://node-console.portaldot.dev/" 
-              target="_blank" 
-              rel="noreferrer"
-              className="hover:text-white transition flex items-center gap-1"
-            >
-              Node Console <ExternalLink className="w-3 h-3" />
-            </a>
-            <a 
-              href="https://test-evm-rpc-v3.portaldot.dev" 
-              target="_blank" 
-              rel="noreferrer"
-              className="hover:text-white transition"
-            >
-              EVM RPC
-            </a>
-            <span className="text-[#ff6a1a]">ZERO-CUSTODY INVARIANT VERIFIED</span>
+      {/* Cyber Footer */}
+      <footer id="footer" data-label="FOOTER">
+        <div className="footer-top">
+          <a href="#intro" className="footer-logo" aria-label="PortalSentinel, back to top">
+            <span className="brand-icon">••</span>
+          </a>
+          <div>
+            <h3 style={{ fontSize: "16px", color: "#fff", marginBottom: "8px" }}>
+              PortalSentinel — Autonomous On-Chain Security Firewall & Closed-Loop Circuit Breaker
+            </h3>
+            <span className="mono" style={{ color: "#8b8985", fontSize: "11px" }}>
+              BUILT FOR PORTALDOT HACKER HOUSE 2026 (TRACK 3: NODE OPERATIONS & TOOLING) · CHAIN ID: 420420777
+            </span>
           </div>
         </div>
+
+        <div className="footer-links">
+          <div>
+            <h4>CORE ARCHITECTURE</h4>
+            <span className="mono" style={{ fontSize: "11px", color: "#b1a0bd" }}>Layer 1: SentinelRegistry.sol</span>
+            <span className="mono" style={{ fontSize: "11px", color: "#b1a0bd" }}>Layer 1: DefenseExecutor.sol</span>
+            <span className="mono" style={{ fontSize: "11px", color: "#b1a0bd" }}>Layer 2: Threat Scoring Engine</span>
+            <span className="mono" style={{ fontSize: "11px", color: "#b1a0bd" }}>Layer 3: 1.35x Gas Dispatcher</span>
+          </div>
+
+          <div>
+            <h4>TESTNET ENDPOINTS</h4>
+            <a href="https://node-console.portaldot.dev/" target="_blank" rel="noreferrer">Node Explorer ↗</a>
+            <a href="https://test-evm-rpc-v3.portaldot.dev" target="_blank" rel="noreferrer">EVM JSON-RPC ↗</a>
+            <span className="mono" style={{ fontSize: "10px", color: "#78e9c4" }}>pallet-revive / PolkaVM</span>
+          </div>
+
+          <div>
+            <h4>SECURITY GUARANTEES</h4>
+            <span className="mono" style={{ fontSize: "11px", color: "#b1a0bd" }}>Zero-Custody Contract Invariant</span>
+            <span className="mono" style={{ fontSize: "11px", color: "#b1a0bd" }}>Scoped Guardian Authorization</span>
+            <span className="mono" style={{ fontSize: "11px", color: "#b1a0bd" }}>Front-Running Preemption</span>
+          </div>
+
+          <div>
+            <h4>HACKATHON DETAILS</h4>
+            <span className="mono" style={{ fontSize: "10px", color: "#ff8638" }}>DORAHACKS 2026</span>
+            <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>TRACK 3: TOOLING</span>
+            <a href="#intro" style={{ marginTop: "12px", color: "#dfbc97" }}>BACK TO TOP ↑</a>
+          </div>
+        </div>
+
+        <div className="footer-bottom mono">
+          <span>© 2026 PORTALSENTINEL</span>
+          <span>AUTONOMOUS SECURITY FOR POLKAVM EVM</span>
+          <span className="brand-word">PORTALDOT</span>
+        </div>
       </footer>
-    </div>
+    </>
   );
 }
