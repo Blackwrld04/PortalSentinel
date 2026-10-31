@@ -6,6 +6,7 @@ if (dns.setDefaultResultOrder) {
 import { ethers } from "ethers";
 import { CONFIG } from "./config.js";
 import { ThreatSignal } from "./threatScorer.js";
+import { metricsServer } from "./metrics.js";
 
 export type ThreatSignalCallback = (signal: ThreatSignal) => void;
 
@@ -47,7 +48,11 @@ export class BlockStreamListener {
   private async pollLoop() {
     while (this.isRunning) {
       try {
+        const t0 = Date.now();
         const currentBlock = await this.provider.getBlockNumber();
+        const latency = Date.now() - t0;
+        metricsServer.updateMetric("rpcLatencyMs", latency);
+        metricsServer.updateMetric("blockHeight", currentBlock);
 
         if (currentBlock > this.lastScannedBlock) {
           for (let b = this.lastScannedBlock + 1; b <= currentBlock; b++) {

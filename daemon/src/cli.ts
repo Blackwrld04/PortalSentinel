@@ -164,6 +164,31 @@ async function cmdThreatMatrix() {
   console.log("==================================================================");
 }
 
+async function cmdMetrics() {
+  console.log("==================================================================");
+  console.log("   [METRICS] PORTALSENTINEL PROMETHEUS & HEALTH OBSERVABILITY     ");
+  console.log("==================================================================");
+  try {
+    const res = await fetch("http://localhost:3001/health");
+    const data = await res.json();
+    console.log(`[STATUS] Daemon Health:     ${data.status}`);
+    console.log(`[NET]    Network:           ${data.network} (Chain ID: ${data.chainId})`);
+    console.log(`[BLOCK]  Monitored Block:   #${data.metrics.blockHeight}`);
+    console.log(`[RPC]    Roundtrip Latency: ${data.metrics.rpcLatencyMs} ms`);
+    console.log(`[ALERT]  Threats Detected:  ${data.metrics.threatsDetected}`);
+    console.log(`[DEFENSE]Defenses Executed: ${data.metrics.defensesExecuted}`);
+    console.log(`[PREEMPT]Last Action Time:  ${data.metrics.lastDefenseLatencyMs} ms`);
+    console.log(`[TELE]   Telegram Alerts:   ${data.metrics.alertsSent}`);
+    console.log(`[UPTIME] Daemon Uptime:     ${data.metrics.uptimeSeconds}s`);
+    console.log("------------------------------------------------------------------");
+    console.log("Prometheus endpoint available at: http://localhost:3001/metrics");
+  } catch {
+    console.log("[INFO] Daemon is not currently running on port 3001.");
+    console.log("Run 'npm run daemon' to start the live monitoring engine & metrics server.");
+  }
+  console.log("==================================================================");
+}
+
 async function cmdBenchmark() {
   console.log("==================================================================");
   console.log("   [EXEC] RUNNING PORTALDOT V3 RPC BENCHMARK (5 Iterations)...        ");
@@ -222,6 +247,11 @@ async function main() {
     case "matrix":
     case "rules":
       await cmdThreatMatrix();
+      break;
+
+    case "metrics":
+    case "telemetry":
+      await cmdMetrics();
       break;
 
     case "benchmark":

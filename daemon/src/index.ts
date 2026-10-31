@@ -3,6 +3,7 @@ import { BlockStreamListener } from "./listener.js";
 import { ThreatScorer } from "./threatScorer.js";
 import { DefenseDispatcher } from "./dispatcher.js";
 import { telegramNotifier } from "./telegramNotifier.js";
+import { metricsServer } from "./metrics.js";
 
 async function main() {
   console.log("==================================================================");
@@ -15,6 +16,8 @@ async function main() {
   console.log(`[TARGET] Exploit Fixture:  ${CONFIG.contracts.mockExploit}`);
   console.log(`[TELEGRAM] Telegram Alerts:  ${CONFIG.telegram.enabled ? "ACTIVE (24/7 Push)" : "DISABLED"}`);
   console.log("==================================================================\n");
+
+  await metricsServer.start();
 
   const dispatcher = new DefenseDispatcher();
   const listener = new BlockStreamListener();
@@ -39,14 +42,20 @@ async function main() {
     console.log(`[SCORE] Threat Score:      ${evaluation.threatScore}/100 [${evaluation.severity}]`);
     console.log(`[REC] Recommendation:    ${evaluation.recommendedAction}`);
 
+    metricsServer.incrementMetric("threatsDetected");
     // Send instant Telegram alert to victim
     await telegramNotifier.sendThreatDetectedAlert(signal, evaluation);
+    metricsServer.incrementMetric("alertsSent");
 
     if (evaluation.shouldDefend) {
       const result = await dispatcher.dispatchDefense(signal, evaluation);
       
       // Dispatch follow-up resolution alert to Telegram
       await telegramNotifier.sendDefenseExecutedAlert(result, signal, evaluation);
+
+      metricsServer.incrementMetric("defensesExecuted");
+      metricsServer.updateMetric("lastDefenseLatencyMs", result.latencyMs);
+      metricsServer.incrementMetric("alertsSent");
 
       if (result.success) {
         console.log(`[RESOLVED] [INCIDENT RESOLVED] Front-ran attacker in ${result.latencyMs}ms!`);
@@ -59,6 +68,7 @@ async function main() {
   // Handle graceful shutdown
   process.on("SIGINT", () => {
     console.log("\nReceived SIGINT. Shutting down PortalSentinel daemon...");
+    metricsServer.stop();
     listener.stop();
     process.exit(0);
   });

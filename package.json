@@ -14,7 +14,8 @@
     "cli:benchmark": "cd daemon && npm run cli benchmark",
     "cli:matrix": "cd daemon && npm run cli matrix",
     "daemon": "cd daemon && npm start",
-    "telegram:bot": "cd daemon && npm run telegram:bot"
+    "telegram:bot": "cd daemon && npm run telegram:bot",
+    "cli:metrics": "cd daemon && npm run cli metrics"
   },
   "keywords": [
     "portaldot",
