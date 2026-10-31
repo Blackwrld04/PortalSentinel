@@ -156,7 +156,7 @@
 .hero-guardian-dock {
   position: absolute;
   left: 71%;
-  top: 410px;
+  top: 433px;
   transform: translateX(-50%);
   z-index: 10;
   display: flex;
@@ -168,7 +168,7 @@
 @media (max-width: 1200px) {
   .hero-guardian-dock {
     left: 71%;
-    top: 405px;
+    top: 418px;
     transform: translateX(-50%) scale(0.82);
     transform-origin: top center;
   }
@@ -177,7 +177,7 @@
 @media (max-width: 900px) {
   .hero-guardian-dock {
     left: 71%;
-    top: 400px;
+    top: 410px;
     transform: translateX(-50%) scale(0.72);
     transform-origin: top center;
   }
