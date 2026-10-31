@@ -3,60 +3,152 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: 'Outfit', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --bg-dark: #080C14;
-  --card-bg: #0D1424;
-  --card-border: rgba(255, 255, 255, 0.08);
-  --primary-emerald: #10B981;
-  --primary-cyan: #06B6D4;
-  --alert-red: #EF4444;
-  --warning-amber: #F59E0B;
+  --bg: #080808;
+  --ink: #f2efea;
+  --muted: #8b8985;
+  --line: #242322;
+  --line-strong: #382c22;
+  --faint: #121110;
+  --orange: #ff6a1a;
+  --orange-glow: rgba(255, 106, 26, 0.25);
+  --amber: #ffb168;
+  --rainbow: linear-gradient(115deg, #ff6a1a, #ffad64);
+  --cyan: #78e9c4;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--bg-dark);
-  color: #F1F5F9;
-  font-family: var(--font-sans);
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
 }
 
-.mono-font {
-  font-family: var(--font-mono);
+/* Background vertical reference grid from Agent style */
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(90deg, 
+    transparent calc(16.6667% - 1px), 
+    rgba(36, 35, 34, 0.45) 16.6667%, 
+    transparent calc(16.6667% + 1px), 
+    transparent calc(50% - 1px), 
+    rgba(36, 35, 34, 0.45) 50%, 
+    transparent calc(50% + 1px), 
+    transparent calc(83.3333% - 1px), 
+    rgba(36, 35, 34, 0.45) 83.3333%, 
+    transparent calc(83.3333% + 1px)
+  );
+  opacity: 0.6;
+  z-index: 0;
 }
 
-/* Glassmorphism Card */
-.glass-panel {
-  background: rgba(13, 20, 36, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--card-border);
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+.mono {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  letter-spacing: 0.04em;
 }
 
-.glass-panel-glow {
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+/* Cyber chamfered buttons */
+.cyber-button {
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  border: 1px solid var(--orange);
+  background: #110c08;
+  color: #fff;
+  transition: all 0.2s ease;
 }
 
-/* Cyber Pulse Animation */
-@keyframes radar-pulse {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.05); opacity: 0.4; }
-  100% { transform: scale(0.95); opacity: 0.8; }
+.cyber-button:hover {
+  background: #24140a;
+  border-color: #ff8638;
+  box-shadow: 0 0 20px var(--orange-glow);
 }
 
-.animate-radar {
-  animation: radar-pulse 3s infinite ease-in-out;
+.cyber-panel {
+  background: #0d0c0b;
+  border: 1px solid var(--line);
+  position: relative;
 }
 
-/* Subtle Grid Background */
-.bg-grid {
-  background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
+.cyber-panel-orange {
+  border-color: rgba(255, 106, 26, 0.35);
+  box-shadow: 0 0 25px rgba(255, 106, 26, 0.08);
+}
+
+/* Corner bracket tech accents */
+.corner-bracket {
+  position: relative;
+  padding: 2px 8px;
+  display: inline-block;
+}
+
+.corner-bracket::before {
+  content: "";
+  clip-path: polygon(0 0, 30% 0, 30% 8%, 6px 8%, 6px 38%, 0 38%, 0 0, 100% 100%, 65% 100%, 65% 92%, calc(100% - 6px) 92%, calc(100% - 6px) 62%, 100% 62%, 100% 100%);
+  border: 1px solid #ff6a1a;
+  position: absolute;
+  inset: -2px;
+}
+
+/* Glowing pulse dot */
+.pulse-dot {
+  background: var(--orange);
+  border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  display: inline-block;
+  box-shadow: 0 0 9px var(--orange);
+  animation: 2s infinite pulse;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.9); }
+}
+
+/* Wires & Signal Flow */
+@keyframes signal {
+  to { stroke-dashoffset: -1024px; }
+}
+
+.wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.wires path {
+  fill: none;
+  stroke: #33271e;
+  stroke-width: 1px;
+}
+
+.wires .data-flow {
+  stroke: var(--orange);
+  stroke-dasharray: 18 600;
+  animation: 6s linear infinite signal;
+}
+
+/* Custom cyber scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0908;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #28211b;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff6a1a;
 }
