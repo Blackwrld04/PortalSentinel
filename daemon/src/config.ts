@@ -30,5 +30,12 @@ export const CONFIG = {
     conservative: 80,
     balanced: 60,
     aggressive: 40
+  },
+
+  // Telegram Alerting Config
+  telegram: {
+    botToken: process.env.TELEGRAM_BOT_TOKEN || "",
+    chatId: process.env.TELEGRAM_CHAT_ID || "",
+    enabled: process.env.TELEGRAM_ALERTS_ENABLED !== "false"
   }
 };

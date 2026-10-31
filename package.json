@@ -13,7 +13,8 @@
     "cli:health": "cd daemon && npm run cli health",
     "cli:benchmark": "cd daemon && npm run cli benchmark",
     "cli:matrix": "cd daemon && npm run cli matrix",
-    "daemon": "cd daemon && npm start"
+    "daemon": "cd daemon && npm start",
+    "telegram:bot": "cd daemon && npm run telegram:bot"
   },
   "keywords": [
     "portaldot",

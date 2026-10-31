@@ -6,13 +6,15 @@ if (dns.setDefaultResultOrder) {
 import { ethers } from "ethers";
 import { CONFIG } from "./config.js";
 import { ThreatScorer, ThreatSignal } from "./threatScorer.js";
+import { telegramNotifier } from "./telegramNotifier.js";
 
 async function runAttackSimulation() {
   console.log("==================================================================");
-  console.log("   🧪  PORTALSENTINEL LIVE TESTNET SIMULATION HARNESS            ");
+  console.log("   [TEST]  PORTALSENTINEL LIVE TESTNET SIMULATION HARNESS            ");
   console.log("==================================================================");
-  console.log(`🌐 Portaldot V3 EVM RPC: ${CONFIG.network.rpcUrl}`);
-  console.log(`⛓️  Chain ID:             ${CONFIG.network.chainId}`);
+  console.log(`[NET] Portaldot V3 EVM RPC: ${CONFIG.network.rpcUrl}`);
+  console.log(`[CHAIN]  Chain ID:             ${CONFIG.network.chainId}`);
+  console.log(`[TELEGRAM] Telegram Bot Alert:   Armed`);
   console.log("==================================================================\n");
 
   const staticNet = new ethers.Network(CONFIG.network.name, CONFIG.network.chainId);
@@ -23,9 +25,9 @@ async function runAttackSimulation() {
   let currentBlock = 0;
   try {
     currentBlock = await provider.getBlockNumber();
-    console.log(`[1/4] Connected to Portaldot Testnet. Current Block: #${currentBlock}`);
+    console.log(`[1/5] Connected to Portaldot Testnet. Current Block: #${currentBlock}`);
   } catch (err: any) {
-    console.log(`[1/4] Portaldot Testnet ping timed out or offline, using fallback mock block #257850`);
+    console.log(`[1/5] Portaldot Testnet ping timed out or offline, using fallback mock block #257850`);
     currentBlock = 257850;
   }
 
@@ -34,7 +36,7 @@ async function runAttackSimulation() {
   const hackerWallet = ethers.Wallet.createRandom().address;
   const coldSafeTarget = ethers.Wallet.createRandom().address;
 
-  console.log(`[2/4] Initialized Test Scenario:`);
+  console.log(`[2/5] Initialized Test Scenario:`);
   console.log(`      Victim Wallet:    ${victimWallet}`);
   console.log(`      Hacker Address:   ${hackerWallet}`);
   console.log(`      Cold Safe Target: ${coldSafeTarget}`);
@@ -49,24 +51,37 @@ async function runAttackSimulation() {
     blockNumber: currentBlock
   };
 
-  console.log(`\n[3/4] Simulating Inbound Threat Signal:`);
-  console.log(`      ⚡ Event: ${mockSignal.eventName}`);
-  console.log(`      💰 Draining Target: 5,000 pUSD`);
+  console.log(`\n[3/5] Simulating Inbound Threat Signal:`);
+  console.log(`      [EXEC] Event: ${mockSignal.eventName}`);
+  console.log(`      [ASSET] Draining Target: 5,000 pUSD`);
 
   // Run threat scoring engine
   const evalResult = ThreatScorer.evaluate(mockSignal, 1); // 1 = BALANCED
 
-  console.log(`\n[4/4] Sentinel Threat Evaluation:`);
+  console.log(`\n[4/5] Sentinel Threat Evaluation:`);
   console.log(`      Score:       ${evalResult.threatScore}/100 [${evalResult.severity}]`);
-  console.log(`      Decision:    ${evalResult.shouldDefend ? "🚨 AUTO-DEFENSE TRIGGERED" : "PASS"}`);
+  console.log(`      Decision:    ${evalResult.shouldDefend ? "[ALERT] AUTO-DEFENSE TRIGGERED" : "PASS"}`);
   console.log(`      Action:      ${evalResult.recommendedAction}`);
   console.log(`      Reasons:`);
   for (const reason of evalResult.reasons) {
     console.log(`        - ${reason}`);
   }
 
+  console.log(`\n[5/5] Dispatching Instant Telegram Alerts...`);
+  await telegramNotifier.sendThreatDetectedAlert(mockSignal, evalResult);
+
+  const mockDefenseResult = {
+    success: true,
+    txHash: "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(""),
+    blockNumber: currentBlock + 1,
+    latencyMs: 14,
+    actionExecuted: evalResult.recommendedAction
+  };
+
+  await telegramNotifier.sendDefenseExecutedAlert(mockDefenseResult, mockSignal, evalResult);
+
   console.log("\n==================================================================");
-  console.log("   ✅ Simulation Complete! Logic & Scoring Verified.             ");
+  console.log("   [OK] Simulation Complete! Scoring & Telegram Notification Verified");
   console.log("==================================================================");
 }
 

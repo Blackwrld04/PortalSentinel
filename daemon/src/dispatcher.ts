@@ -61,9 +61,9 @@ export class DefenseDispatcher {
     evaluation: ThreatEvaluation
   ): Promise<DefenseDispatchResult> {
     const startTime = Date.now();
-    console.log(`\n🛡️ [SENTINEL DISPATCHER] Initiating closed-loop defense for victim: ${signal.targetVictim}`);
-    console.log(`   🚨 Threat Score: ${evaluation.threatScore}/100 (${evaluation.severity})`);
-    console.log(`   ⚡ Action: ${evaluation.recommendedAction}`);
+    console.log(`\n[SENTINEL] [SENTINEL DISPATCHER] Initiating closed-loop defense for victim: ${signal.targetVictim}`);
+    console.log(`   [ALERT] Threat Score: ${evaluation.threatScore}/100 (${evaluation.severity})`);
+    console.log(`   [EXEC] Action: ${evaluation.recommendedAction}`);
 
     try {
       const feeData = await this.provider.getFeeData();
@@ -72,14 +72,14 @@ export class DefenseDispatcher {
       let tx: ethers.ContractTransactionResponse;
 
       if (evaluation.recommendedAction === "TRIGGER_EMERGENCY_SWEEP") {
-        console.log(`   🔄 Dispatching executeEmergencySweep to Portaldot EVM...`);
+        console.log(`   [SWEEP] Dispatching executeEmergencySweep to Portaldot EVM...`);
         tx = await this.executorContract.executeEmergencySweep(
           signal.targetVictim,
           [signal.tokenAddress],
           { gasPrice }
         );
       } else {
-        console.log(`   ⛔ Dispatching executeEmergencyBatchRevoke to Portaldot EVM...`);
+        console.log(`   [BLOCK] Dispatching executeEmergencyBatchRevoke to Portaldot EVM...`);
         tx = await this.executorContract.executeEmergencyBatchRevoke(
           signal.targetVictim,
           [signal.tokenAddress],
@@ -88,12 +88,12 @@ export class DefenseDispatcher {
         );
       }
 
-      console.log(`   ⏳ Transaction broadcasted: ${tx.hash}`);
+      console.log(`   [PENDING] Transaction broadcasted: ${tx.hash}`);
       const receipt = await tx.wait();
       const latencyMs = Date.now() - startTime;
 
-      console.log(`   ✅ DEFENSE CONFIRMED in Block #${receipt?.blockNumber} (${latencyMs}ms)!`);
-      console.log(`   🔗 Explorer: ${CONFIG.network.nodeExplorerUrl}`);
+      console.log(`   [OK] DEFENSE CONFIRMED in Block #${receipt?.blockNumber} (${latencyMs}ms)!`);
+      console.log(`   [RPC] Explorer: ${CONFIG.network.nodeExplorerUrl}`);
 
       return {
         success: true,
@@ -104,7 +104,7 @@ export class DefenseDispatcher {
       };
     } catch (error: any) {
       const latencyMs = Date.now() - startTime;
-      console.error(`   ❌ Defense execution failed:`, error?.message || error);
+      console.error(`   [ERROR] Defense execution failed:`, error?.message || error);
       return {
         success: false,
         txHash: "",

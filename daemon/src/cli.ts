@@ -8,6 +8,7 @@ if (dns.setDefaultResultOrder) {
 import { ethers } from "ethers";
 import { CONFIG } from "./config.js";
 import { ThreatScorer } from "./threatScorer.js";
+import { telegramNotifier } from "./telegramNotifier.js";
 
 const STATIC_NETWORK = new ethers.Network(CONFIG.network.name, CONFIG.network.chainId);
 
@@ -21,7 +22,7 @@ async function getProvider(): Promise<ethers.JsonRpcProvider> {
 
 async function cmdNodeHealth() {
   console.log("==================================================================");
-  console.log("   📡 PORTALDOT V3 EVM NODE TELEMETRY & HEALTH CHECK              ");
+  console.log("   [NODE] PORTALDOT V3 EVM NODE TELEMETRY & HEALTH CHECK              ");
   console.log("==================================================================");
   const start = Date.now();
   try {
@@ -34,32 +35,32 @@ async function cmdNodeHealth() {
     const latency = Date.now() - start;
     const block = await provider.getBlock(blockNumber);
 
-    console.log(`✅ Status:           ONLINE (Responsive)`);
-    console.log(`⏱️  RPC Latency:      ${latency} ms`);
-    console.log(`⛓️  Network Name:     ${network.name}`);
-    console.log(`🔢 Chain ID:         ${network.chainId.toString()} (0x${network.chainId.toString(16)})`);
-    console.log(`📦 Latest Block:     #${blockNumber}`);
-    console.log(`🕒 Block Timestamp:  ${block ? new Date(Number(block.timestamp) * 1000).toISOString() : "N/A"}`);
-    console.log(`⛽ Gas Price:        ${feeData.gasPrice ? ethers.formatUnits(feeData.gasPrice, "gwei") : "0"} Gwei`);
-    console.log(`🛡️  EVM Architecture: PolkaVM / pallet-revive (RISC-V Substrate EVM)`);
-    console.log(`🔗 RPC Endpoint:     ${CONFIG.network.rpcUrl}`);
-    console.log(`🧭 Node Console:     https://node-console.portaldot.dev/`);
+    console.log(`[OK] Status:           ONLINE (Responsive)`);
+    console.log(`[LATENCY]  RPC Latency:      ${latency} ms`);
+    console.log(`[CHAIN]  Network Name:     ${network.name}`);
+    console.log(`[CHAIN_ID] Chain ID:         ${network.chainId.toString()} (0x${network.chainId.toString(16)})`);
+    console.log(`[BLOCK] Latest Block:     #${blockNumber}`);
+    console.log(`[TIME] Block Timestamp:  ${block ? new Date(Number(block.timestamp) * 1000).toISOString() : "N/A"}`);
+    console.log(`[GAS] Gas Price:        ${feeData.gasPrice ? ethers.formatUnits(feeData.gasPrice, "gwei") : "0"} Gwei`);
+    console.log(`[SENTINEL]  EVM Architecture: PolkaVM / pallet-revive (RISC-V Substrate EVM)`);
+    console.log(`[RPC] RPC Endpoint:     ${CONFIG.network.rpcUrl}`);
+    console.log(`[CONSOLE] Node Console:     https://node-console.portaldot.dev/`);
     console.log("==================================================================");
   } catch (error: any) {
-    console.error(`❌ Health Check Failed: ${error.message}`);
+    console.error(`[ERROR] Health Check Failed: ${error.message}`);
     process.exit(1);
   }
 }
 
 async function cmdAudit(targetAddress: string) {
   if (!targetAddress || !ethers.isAddress(targetAddress)) {
-    console.error("❌ Error: Invalid EVM address provided.");
+    console.error("[ERROR] Error: Invalid EVM address provided.");
     console.log("Usage: npm run cli audit <address>");
     process.exit(1);
   }
 
   console.log("==================================================================");
-  console.log(`   🔍 AUDITING ACCOUNT / CONTRACT ON PORTALDOT V3:                `);
+  console.log(`   [INSPECT] AUDITING ACCOUNT / CONTRACT ON PORTALDOT V3:                `);
   console.log(`   ${targetAddress}                                               `);
   console.log("==================================================================");
 
@@ -73,10 +74,10 @@ async function cmdAudit(targetAddress: string) {
 
     const isContract = code !== "0x";
 
-    console.log(`🏷️  Account Type:     ${isContract ? "Smart Contract / Router" : "Externally Owned Account (EOA)"}`);
-    console.log(`💰 Native Balance:   ${ethers.formatEther(balance)} tPOT`);
-    console.log(`🔢 Nonce / Tx Count: ${txCount}`);
-    console.log(`📜 Bytecode Size:    ${isContract ? (code.length - 2) / 2 : 0} bytes`);
+    console.log(`[TOKEN]  Account Type:     ${isContract ? "Smart Contract / Router" : "Externally Owned Account (EOA)"}`);
+    console.log(`[ASSET] Native Balance:   ${ethers.formatEther(balance)} tPOT`);
+    console.log(`[CHAIN_ID] Nonce / Tx Count: ${txCount}`);
+    console.log(`[CONTRACT] Bytecode Size:    ${isContract ? (code.length - 2) / 2 : 0} bytes`);
 
     // Check mock test token balance if available
     try {
@@ -95,15 +96,15 @@ async function cmdAudit(targetAddress: string) {
         mockToken.symbol(),
         mockToken.decimals(),
       ]);
-      console.log(`🪙 ${symbol} Balance:    ${ethers.formatUnits(tokenBal, decimals)} ${symbol}`);
+      console.log(`[TOKEN] ${symbol} Balance:    ${ethers.formatUnits(tokenBal, decimals)} ${symbol}`);
 
       // Check allowance against exploit fixture
       const allowance = await mockToken.allowance(targetAddress, CONFIG.contracts.mockExploit);
-      console.log(`🔓 Allowance -> Exploiter: ${ethers.formatUnits(allowance, decimals)} ${symbol}`);
+      console.log(`[UNLIMITED] Allowance -> Exploiter: ${ethers.formatUnits(allowance, decimals)} ${symbol}`);
       if (allowance > 0n) {
-        console.log(`⚠️  CRITICAL VULNERABILITY: Unlimited or active allowance granted to test exploit fixture!`);
+        console.log(`[WARN]  CRITICAL VULNERABILITY: Unlimited or active allowance granted to test exploit fixture!`);
       } else {
-        console.log(`✅ Safe: Zero allowance granted to known suspicious spenders.`);
+        console.log(`[OK] Safe: Zero allowance granted to known suspicious spenders.`);
       }
     } catch {
       // Mock token query optional
@@ -120,7 +121,7 @@ async function cmdAudit(targetAddress: string) {
         provider
       );
       const isActive = await registry.isShieldActive(targetAddress);
-      console.log(`🛡️  Sentinel Protection: ${isActive ? "🟢 ACTIVE (Circuit breaker armed)" : "🔴 INACTIVE"}`);
+      console.log(`[SENTINEL]  Sentinel Protection: ${isActive ? "[SAFE] ACTIVE (Circuit breaker armed)" : "[CRITICAL] INACTIVE"}`);
       if (isActive) {
         const policy = await registry.getUserPolicy(targetAddress);
         const modes = ["CONSERVATIVE", "BALANCED", "AGGRESSIVE"];
@@ -135,14 +136,14 @@ async function cmdAudit(targetAddress: string) {
 
     console.log("==================================================================");
   } catch (error: any) {
-    console.error(`❌ Audit Failed: ${error.message}`);
+    console.error(`[ERROR] Audit Failed: ${error.message}`);
     process.exit(1);
   }
 }
 
 async function cmdThreatMatrix() {
   console.log("==================================================================");
-  console.log("   🧠 PORTALSENTINEL AUTONOMOUS THREAT SCORING MATRIX            ");
+  console.log("   [ANOMALY] PORTALSENTINEL AUTONOMOUS THREAT SCORING MATRIX            ");
   console.log("==================================================================");
   console.log("Rule 1: Direct Attack & Drain Call Detection");
   console.log("   Weight: +100 Points");
@@ -157,15 +158,15 @@ async function cmdThreatMatrix() {
   console.log("   Trigger: Spender not in Portaldot Verified Protocol Directory");
   console.log("");
   console.log("Decision Matrix by Sensitivity Mode:");
-  console.log("   🛡️  CONSERVATIVE: Defend threshold >= 40 points");
-  console.log("   ⚖️  BALANCED:     Defend threshold >= 65 points");
-  console.log("   ⚡ AGGRESSIVE:   Defend threshold >= 80 points");
+  console.log("   [SENTINEL]  CONSERVATIVE: Defend threshold >= 40 points");
+  console.log("   [ALLOWANCE]  BALANCED:     Defend threshold >= 65 points");
+  console.log("   [EXEC] AGGRESSIVE:   Defend threshold >= 80 points");
   console.log("==================================================================");
 }
 
 async function cmdBenchmark() {
   console.log("==================================================================");
-  console.log("   ⚡ RUNNING PORTALDOT V3 RPC BENCHMARK (5 Iterations)...        ");
+  console.log("   [EXEC] RUNNING PORTALDOT V3 RPC BENCHMARK (5 Iterations)...        ");
   console.log("==================================================================");
   const provider = await getProvider();
   const times: number[] = [];
@@ -184,6 +185,21 @@ async function cmdBenchmark() {
 
   console.log("------------------------------------------------------------------");
   console.log(`   Average: ${avg} ms | Min: ${min} ms | Max: ${max} ms`);
+  console.log("==================================================================");
+}
+
+async function cmdTelegramTest(targetChatId?: string) {
+  console.log("==================================================================");
+  console.log("   [TELEGRAM] PORTALSENTINEL TELEGRAM ALERT SYSTEM VERIFICATION           ");
+  console.log("==================================================================");
+  console.log(`Bot Token Configured: ${CONFIG.telegram.botToken ? "YES (live)" : "NO (simulated mode)"}`);
+  console.log(`Target Chat ID:       ${targetChatId || CONFIG.telegram.chatId || "(None set - previewing log)"}`);
+  console.log("Dispatching test alert notification...\n");
+
+  await telegramNotifier.sendTestPing(targetChatId);
+
+  console.log("\n==================================================================");
+  console.log("   [OK] Telegram test sequence completed successfully!              ");
   console.log("==================================================================");
 }
 
@@ -213,16 +229,23 @@ async function main() {
       await cmdBenchmark();
       break;
 
+    case "telegram":
+    case "telegram:test":
+    case "notify":
+      await cmdTelegramTest(args[1]);
+      break;
+
     case "help":
     default:
       console.log("==================================================================");
-      console.log("   🛡️  PORTALSENTINEL CLI — NODE OPERATIONS & TOOLING SUITE       ");
+      console.log("   [SENTINEL]  PORTALSENTINEL CLI — NODE OPERATIONS & TOOLING SUITE       ");
       console.log("==================================================================");
       console.log("Commands:");
       console.log("   npm run cli health             Check Portaldot V3 EVM & Substrate node health");
       console.log("   npm run cli audit <address>    Audit an EOA or contract for allowances & risk");
       console.log("   npm run cli matrix             View heuristic threat scoring rules");
       console.log("   npm run cli benchmark          Benchmark RPC latency across multiple requests");
+      console.log("   npm run cli telegram:test      Test Telegram bot notification dispatch");
       console.log("==================================================================");
       break;
   }

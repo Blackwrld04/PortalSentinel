@@ -10,7 +10,8 @@
     "start": "tsx src/index.ts",
     "simulate": "tsx src/simulateAttack.ts",
     "cli": "tsx src/cli.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "telegram:bot": "tsx src/telegramBot.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

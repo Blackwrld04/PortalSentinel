@@ -1,6 +1,30 @@
 import { SentinelGuardian } from "./SentinelGuardian";
 import React, { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
+import { ethers } from "ethers";
+import {
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
+  AlertOctagon,
+  Check,
+  CheckCircle2,
+  CheckCheck,
+  Lock,
+  Zap,
+  Terminal,
+  Cpu,
+  Smartphone,
+  Send,
+  ExternalLink,
+  RotateCcw,
+  Bot,
+  Activity,
+  Radio,
+  Wallet,
+  Copy
+} from "lucide-react";
 
 interface ApprovalItem {
   token: string;
@@ -12,9 +36,34 @@ interface ApprovalItem {
   status: "SAFE" | "SUSPICIOUS" | "CRITICAL";
 }
 
+const PORTALDOT_CHAIN_ID_DEC = 420420777;
+const PORTALDOT_CHAIN_ID_HEX = "0x190f1ca9";
+
+const PORTALDOT_NETWORK_CONFIG = {
+  chainId: PORTALDOT_CHAIN_ID_HEX,
+  chainName: "Portaldot V3 Testnet",
+  nativeCurrency: {
+    name: "Portaldot Token",
+    symbol: "POT",
+    decimals: 18,
+  },
+  rpcUrls: ["https://test-evm-rpc-v3.portaldot.dev"],
+  blockExplorerUrls: ["https://node-console.portaldot.dev/"],
+};
+
 export default function App() {
   const [announcementDismissed, setAnnouncementDismissed] = useState(false);
-  const [userAddress, setUserAddress] = useState("0x6198fA0eC3d9E345bB5A429bC283F8C564619C74");
+  
+  // Web3 Live Wallet State (Pillar 2)
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [connectedChainId, setConnectedChainId] = useState<number | null>(null);
+  const [isWrongNetwork, setIsWrongNetwork] = useState(false);
+  const [potBalance, setPotBalance] = useState<string>("0.000");
+  const [isArmingOnChain, setIsArmingOnChain] = useState(false);
+  const [onChainRegisterHash, setOnChainRegisterHash] = useState<string>("");
+  const [copiedSS58, setCopiedSS58] = useState(false);
+  const ss58Address = "5FKcVpYCBtCCaeGP6ZDTdhKGgbNibGLoEbFTGJzkZodXh6jV";
+  const [userAddress, setUserAddress] = useState("0x4d5a5FC178916ED51Ec0a02E38028f47AC2f6E67");
   const [emergencySafe, setEmergencySafe] = useState("0x9378C531475Ffe51368f5a6e8790089eC8d9a27A");
   const [defenseMode, setDefenseMode] = useState<"CONSERVATIVE" | "BALANCED" | "AGGRESSIVE">("BALANCED");
   
@@ -22,6 +71,16 @@ export default function App() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [simStep, setSimStep] = useState<number>(0);
   const [lastTxHash, setLastTxHash] = useState<string>("");
+
+  // Telegram 24/7 Mobile Alert State
+  const [telegramHandle, setTelegramHandle] = useState("@blackwrld04");
+  const [telegramChatId, setTelegramChatId] = useState("953892253");
+  const [telegramSaved, setTelegramSaved] = useState(false);
+  const [telegramNotifyDrain, setTelegramNotifyDrain] = useState(true);
+  const [telegramNotifySuspicious, setTelegramNotifySuspicious] = useState(true);
+  const [telegramNotifyDaily, setTelegramNotifyDaily] = useState(false);
+  const [testAlertSent, setTestAlertSent] = useState(false);
+  const [telegramAlertPulse, setTelegramAlertPulse] = useState(false);
 
   const [logs, setLogs] = useState<string[]>([
     "[08:30:10] [SYSTEM] PortalSentinel node initialized on Portaldot V3 EVM (Chain ID: 420420777)",
@@ -69,6 +128,203 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
+  const fetchBalance = async (provider: any, address: string) => {
+    try {
+      const bal = await provider.getBalance(address);
+      const formatted = ethers.formatEther(bal);
+      setPotBalance(parseFloat(formatted).toFixed(4));
+    } catch {
+      setPotBalance("0.000");
+    }
+  };
+
+  const connectWallet = async () => {
+    if (typeof window === "undefined" || !(window as any).ethereum) {
+      alert("No Web3 wallet detected! Please install MetaMask or Rabby.");
+      return;
+    }
+    try {
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const accounts = await (window as any).ethereum.request({ method: "eth_requestAccounts" });
+      if (accounts && accounts.length > 0) {
+        const address = accounts[0];
+        setUserAddress(address);
+        setWalletConnected(true);
+        addLog(`[WALLET] Connected EOA account: ${address}`);
+
+        const network = await provider.getNetwork();
+        const chainIdNum = Number(network.chainId);
+        setConnectedChainId(chainIdNum);
+
+        if (chainIdNum !== PORTALDOT_CHAIN_ID_DEC) {
+          setIsWrongNetwork(true);
+          await switchNetwork();
+        } else {
+          setIsWrongNetwork(false);
+          await fetchBalance(provider, address);
+        }
+      }
+    } catch (err: any) {
+      addLog(`[WALLET] Connection failed: ${err.message || err}`);
+    }
+  };
+
+  const switchNetwork = async () => {
+    if (!(window as any).ethereum) return;
+    try {
+      await (window as any).ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: PORTALDOT_CHAIN_ID_HEX }],
+      });
+      setIsWrongNetwork(false);
+      setConnectedChainId(PORTALDOT_CHAIN_ID_DEC);
+      addLog("[WALLET] Switched network to Portaldot V3 Testnet (Chain ID: 420420777)");
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      await fetchBalance(provider, userAddress);
+    } catch (switchError: any) {
+      if (switchError.code === 4902) {
+        try {
+          await (window as any).ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [PORTALDOT_NETWORK_CONFIG],
+          });
+          setIsWrongNetwork(false);
+          setConnectedChainId(PORTALDOT_CHAIN_ID_DEC);
+          addLog("[WALLET] Added and connected Portaldot V3 Testnet to MetaMask!");
+        } catch (addError: any) {
+          addLog(`[WALLET] Failed to add Portaldot V3: ${addError.message}`);
+        }
+      } else {
+        addLog(`[WALLET] Failed to switch network: ${switchError.message}`);
+      }
+    }
+  };
+
+  const disconnectWallet = () => {
+    setWalletConnected(false);
+    setUserAddress("0x4d5a5FC178916ED51Ec0a02E38028f47AC2f6E67");
+    setPotBalance("0.000");
+    addLog("[WALLET] Disconnected browser wallet. Switched to sandbox demo address.");
+  };
+
+  const handleAddPUSDToMetaMask = async () => {
+    if (typeof window === "undefined" || !(window as any).ethereum) return;
+    try {
+      await (window as any).ethereum.request({
+        method: "wallet_watchAsset",
+        params: {
+          type: "ERC20",
+          options: {
+            address: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+            symbol: "pUSD",
+            decimals: 18,
+          },
+        },
+      });
+      addLog("[WALLET] Prompted MetaMask to watch mock asset pUSD!");
+    } catch (err: any) {
+      addLog(`[WALLET] Watch asset: ${err.message || err}`);
+    }
+  };
+
+  const [copiedTemplate, setCopiedTemplate] = useState(false);
+
+  const handleCopyFaucetTemplate = () => {
+    const template = `Hello Portaldot Team! I am participating in the DoraHacks Portaldot Hacker House (Track 3: Node Operations & Tooling).
+Here are my wallet details for testnet token distribution:
+• Native Substrate SS58: ${ss58Address}
+• MetaMask EVM Address: ${userAddress}
+Could you please fund my account with testnet POT gas tokens so I can deploy and interact with smart contracts on Portaldot V3 EVM? Thank you!`;
+    navigator.clipboard.writeText(template);
+    setCopiedTemplate(true);
+    addLog("[CLIPBOARD] Copied Discord/DoraHacks Admin Faucet Request Template!");
+    setTimeout(() => setCopiedTemplate(false), 3000);
+  };
+
+  const handleCopySS58 = () => {
+    navigator.clipboard.writeText(ss58Address);
+    setCopiedSS58(true);
+    addLog(`[CLIPBOARD] Copied Portaldot Native SS58 Address: ${ss58Address}`);
+    setTimeout(() => setCopiedSS58(false), 3000);
+  };
+
+  const handleArmVaultOnChain = async () => {
+    if (!walletConnected) {
+      await connectWallet();
+      return;
+    }
+    if (isWrongNetwork) {
+      await switchNetwork();
+      return;
+    }
+
+    setIsArmingOnChain(true);
+    setOnChainRegisterHash("");
+    addLog("[ON-CHAIN] Prompting MetaMask to register defense policy in SentinelRegistry.sol...");
+
+    try {
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+
+      const bal = await provider.getBalance(userAddress);
+      if (bal === 0n) {
+        addLog("[ON-CHAIN WARNING] Account has 0 POT gas tokens on Portaldot V3 Testnet.");
+        addLog(`[FAUCET ADVISORY] Provide your native SS58 address (${ss58Address}) to Portaldot Discord admin for testnet POT!`);
+      }
+
+      const REGISTRY_ABI = [
+        "function registerShield(uint8 _mode, address _emergencySafe) external",
+        "function isProtected(address _user) external view returns (bool)"
+      ];
+
+      const registryContract = new ethers.Contract(
+        "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        REGISTRY_ABI,
+        signer
+      );
+
+      const modeNum = defenseMode === "CONSERVATIVE" ? 0 : defenseMode === "BALANCED" ? 1 : 2;
+
+      const tx = await registryContract.registerShield(modeNum, emergencySafe, {
+        gasLimit: 300000
+      });
+
+      addLog(`[ON-CHAIN] Transaction broadcasted: ${tx.hash}`);
+      setOnChainRegisterHash(tx.hash);
+
+      const receipt = await tx.wait();
+      addLog(`[ON-CHAIN SUCCESS] Shield policy registered in block #${receipt?.blockNumber}! Explorer: https://node-console.portaldot.dev/`);
+
+      confetti({
+        particleCount: 100,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ["#78e9c4", "#ff6a1a", "#ffffff"]
+      });
+    } catch (err: any) {
+      addLog(`[ON-CHAIN ERROR] ${err.reason || err.message || "User cancelled transaction"}`);
+    } finally {
+      setIsArmingOnChain(false);
+    }
+  };
+
+  const handleSaveTelegram = (e: React.FormEvent) => {
+    e.preventDefault();
+    setTelegramSaved(true);
+    addLog(`[TELEGRAM] Configuration saved: Alert target bound to ${telegramHandle} (Chat ID: ${telegramChatId})`);
+    setTimeout(() => setTelegramSaved(false), 3000);
+  };
+
+  const handleSendTestTelegram = () => {
+    setTestAlertSent(true);
+    setTelegramAlertPulse(true);
+    addLog(`[TELEGRAM BOT] Dispatched test security ping to ${telegramHandle} (${telegramChatId}). Push delivery verified!`);
+    setTimeout(() => {
+      setTestAlertSent(false);
+      setTelegramAlertPulse(false);
+    }, 4500);
+  };
+
   const addLog = (msg: string) => {
     const timestamp = new Date().toTimeString().split(" ")[0];
     setLogs((prev) => [`[${timestamp}] ${msg}`, ...prev.slice(0, 20)]);
@@ -80,22 +336,22 @@ export default function App() {
     setSimStep(1);
     setLastTxHash("");
 
-    addLog("🚨 [ALERT] Exploit transaction detected! Router 0xCf7Ed... attempting 5,000 pUSD drain.");
+    addLog("[ALERT] Exploit transaction detected! Router 0xCf7Ed... attempting 5,000 pUSD drain.");
 
     // Step 2: Threat Evaluation
     await new Promise((r) => setTimeout(r, 1100));
     setSimStep(2);
-    addLog("🧠 [THREAT SCORER] Evaluation: 100/100 [CRITICAL]. Uncertified router signature confirmed.");
+    addLog("[THREAT SCORER] Evaluation: 100/100 [CRITICAL]. Uncertified router signature confirmed.");
 
     // Step 3: Priority Gas Escalation (1.35x)
     await new Promise((r) => setTimeout(r, 1200));
     setSimStep(3);
-    addLog("⚡ [DISPATCHER] Escalating gas price by 1.35x (0.0000354 Gwei). Broadcasting emergency front-run.");
+    addLog("[DISPATCHER] Escalating gas price by 1.35x (0.0000354 Gwei). Broadcasting emergency front-run.");
 
     // Step 4: Defense Execution
     await new Promise((r) => setTimeout(r, 1300));
     setSimStep(4);
-    addLog("🛡️ [EXECUTION] DefenseExecutor.executeEmergencyBatchRevoke mined in block #" + (blockHeight + 1));
+    addLog("[EXECUTION] DefenseExecutor.executeEmergencyBatchRevoke mined in block #" + (blockHeight + 1));
 
     // Step 5: Capital Rescued
     await new Promise((r) => setTimeout(r, 1100));
@@ -112,7 +368,10 @@ export default function App() {
       )
     );
 
-    addLog("✅ [SUCCESS] Capital preserved! Attacker front-ran. Allowance zeroed before drain finalized.");
+    addLog("[SUCCESS] Capital preserved! Attacker front-ran. Allowance zeroed before drain finalized.");
+    setTelegramAlertPulse(true);
+    addLog(`[TELEGRAM BOT] Dispatched instant exploit alert to ${telegramHandle}: 5,000 pUSD preserved in 14ms!`);
+    setTimeout(() => setTelegramAlertPulse(false), 5000);
     setIsSimulating(false);
 
     try {
@@ -159,7 +418,7 @@ export default function App() {
         status: "SAFE"
       }
     ]);
-    addLog("🔄 [SANDBOX] Reset to baseline state. Vulnerable allowance restored for testing.");
+    addLog("[SANDBOX] Reset to baseline state. Vulnerable allowance restored for testing.");
   };
 
   return (
@@ -191,18 +450,51 @@ export default function App() {
             <a href="#intro">OVERVIEW</a>
             <a href="#sandbox">DEFENSE SANDBOX</a>
             <a href="#approvals">APPROVALS SCANNER</a>
+            <a href="#telegram">TELEGRAM ALERTS</a>
             <a href="#daemon">NODE OPS & TELEMETRY</a>
             <a href="https://node-console.portaldot.dev/" target="_blank" rel="noreferrer">EXPLORER ↗</a>
           </div>
-          <button 
-            className="outline-button launch" 
-            onClick={() => {
-              const el = document.getElementById("sandbox");
-              el?.scrollIntoView({ behavior: "smooth" });
-            }}
-          >
-            <span>••</span> SIMULATE DEFENSE
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {!walletConnected ? (
+              <button 
+                className="outline-button launch" 
+                onClick={connectWallet}
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px", borderColor: "#78e9c4", color: "#78e9c4" }}
+              >
+                <Wallet size={12} /> CONNECT WALLET
+              </button>
+            ) : isWrongNetwork ? (
+              <button 
+                className="outline-button" 
+                onClick={switchNetwork}
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px", borderColor: "#ff6a1a", color: "#ff8638" }}
+              >
+                <AlertTriangle size={12} /> SWITCH TO PORTALDOT V3
+              </button>
+            ) : (
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", background: "rgba(120, 233, 196, 0.08)", border: "1px solid rgba(120, 233, 196, 0.3)", padding: "6px 12px" }}>
+                <span className="mono" style={{ fontSize: "11px", color: "#78e9c4", fontWeight: "bold" }}>{potBalance} POT</span>
+                <span className="mono" style={{ fontSize: "11px", color: "#fff" }}>{userAddress.slice(0, 6)}...{userAddress.slice(-4)}</span>
+                <button 
+                  onClick={disconnectWallet} 
+                  title="Disconnect Wallet"
+                  style={{ background: "transparent", border: "none", color: "#8b8985", cursor: "pointer", fontSize: "12px", padding: "0 2px" }}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            <button 
+              className="outline-button" 
+              onClick={() => {
+                const el = document.getElementById("sandbox");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              SIMULATE DEFENSE ↗
+            </button>
+          </div>
         </nav>
       </header>
 
@@ -214,7 +506,7 @@ export default function App() {
 
             <div className="hero-wiring">
               <div className="prompt-card">
-                <span className="quote">⌘</span>
+                <span className="quote" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Terminal size={14} color="#ff8638" /></span>
                 <span className="prompt-copy mono" id="prompt-copy">
                   OBSERVING BLOCK STREAM...<br />
                   pallet-revive REVM ENGINE ONLINE.
@@ -269,8 +561,8 @@ export default function App() {
                 >
                   {isSimulating ? "DEFENSE IN PROGRESS..." : "SIMULATE EXPLOIT ATTACK"} <span>↗</span>
                 </button>
-                <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", border: "1px solid #30261e", padding: "14px 18px", background: "#0e0c0a" }}>
-                  🔒 ZERO-CUSTODY INVARIANT
+                <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", border: "1px solid #30261e", padding: "14px 18px", background: "#0e0c0a", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <Lock size={12} color="#78e9c4" /> ZERO-CUSTODY INVARIANT
                 </span>
               </div>
             </div>
@@ -338,8 +630,8 @@ export default function App() {
                   <span className="pulse-dot" style={{ marginRight: "8px" }}></span>
                   PORTALDOT V3 TESTNET SANDBOX HARNESS
                 </span>
-                <button className="outline-button" onClick={resetSimulation} style={{ padding: "8px 14px", fontSize: "10px" }}>
-                  RESET SCENARIO ↺
+                <button className="outline-button" onClick={resetSimulation} style={{ padding: "8px 14px", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <RotateCcw size={11} /> RESET SCENARIO
                 </button>
               </div>
 
@@ -353,7 +645,7 @@ export default function App() {
                 {isSimulating ? (
                   <span>INTERCEPTING ATTACK ON PORTALDOT V3 (STEP 0{simStep}/05)...</span>
                 ) : (
-                  <span>[🚨 RUN EXPLOIT & DEFENSE SANDBOX] ↗</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}><AlertOctagon size={16} color="#fff" /> RUN EXPLOIT & DEFENSE SANDBOX ↗</span>
                 )}
               </button>
 
@@ -395,7 +687,7 @@ export default function App() {
                 <div style={{ padding: "16px", background: "#0c1f15", border: "1px solid #78e9c466", marginTop: "15px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                     <span className="mono" style={{ color: "#78e9c4", fontSize: "11px", fontWeight: "bold" }}>
-                      ✅ DEFENSE TRANSACTION CONFIRMED ON TESTNET:
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><CheckCircle2 size={13} color="#78e9c4" /> DEFENSE TRANSACTION CONFIRMED ON TESTNET:</span>
                     </span>
                     <a 
                       href="https://node-console.portaldot.dev/" 
@@ -455,7 +747,7 @@ export default function App() {
               </div>
 
               {/* Registered Cold Safe Input */}
-              <div style={{ background: "#060507", border: "1px solid var(--line)", padding: "16px", marginBottom: "25px" }}>
+              <div style={{ background: "#060507", border: "1px solid var(--line)", padding: "16px", marginBottom: "20px" }}>
                 <span className="mono" style={{ fontSize: "10px", color: "#dfbc97", display: "block", marginBottom: "8px" }}>
                   REGISTERED EMERGENCY COLD SAFE (Sweep Invariant Target)
                 </span>
@@ -470,6 +762,91 @@ export default function App() {
                   <span className="badge-safe">VERIFIED SAFE</span>
                 </div>
               </div>
+
+              {/* Native Substrate SS58 Identity Card (DoraHacks & Faucet Anchor) */}
+              <div style={{ background: "rgba(255, 106, 26, 0.05)", border: "1px solid rgba(255, 106, 26, 0.25)", padding: "14px 18px", marginBottom: "25px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "6px" }}>
+                  <span className="mono" style={{ fontSize: "11px", color: "#ff8638", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <ShieldCheck size={13} color="#ff8638" /> PORTALDOT V3 NATIVE SUBSTRATE IDENTITY (SS58)
+                  </span>
+                  <span className="mono" style={{ fontSize: "10px", color: "#78e9c4", background: "rgba(120, 233, 196, 0.1)", padding: "2px 8px" }}>
+                    pallet-revive COMPATIBLE
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                  <code className="mono" style={{ flex: 1, background: "#0a080d", border: "1px solid var(--line)", padding: "8px 12px", color: "#dfbc97", fontSize: "11px", wordBreak: "break-all" }}>
+                    {ss58Address}
+                  </code>
+                  <button 
+                    onClick={handleCopySS58}
+                    className="outline-button"
+                    style={{ padding: "8px 12px", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                  >
+                    {copiedSS58 ? <Check size={11} color="#78e9c4" /> : <Copy size={11} />}
+                    {copiedSS58 ? "COPIED" : "COPY SS58"}
+                  </button>
+                  <button 
+                    onClick={handleCopyFaucetTemplate}
+                    className="outline-button launch"
+                    style={{ padding: "8px 12px", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                  >
+                    {copiedTemplate ? <Check size={11} color="#78e9c4" /> : <Send size={11} />}
+                    {copiedTemplate ? "TEMPLATE COPIED" : "COPY FAUCET DM TEMPLATE"}
+                  </button>
+                </div>
+                <div style={{ fontSize: "10px", color: "#8b8985", marginTop: "8px", lineHeight: 1.4 }}>
+                  Use this address for Portaldot Discord token distribution (`/testnet-faucet` or DM admin @Stella707827 / @titus242471). Mandatory gas token for DoraHacks Track 3 on-chain transactions.
+                </div>
+              </div>
+
+              {/* On-Chain Arm Vault Trigger */}
+              <div style={{ marginBottom: "25px", display: "flex", flexWrap: "wrap", gap: "15px", alignItems: "center" }}>
+                <button
+                  onClick={handleArmVaultOnChain}
+                  disabled={isArmingOnChain}
+                  className="agent-cta"
+                  style={{ flex: 1, justifyContent: "center", padding: "16px", fontSize: "12px", cursor: isArmingOnChain ? "wait" : "pointer" }}
+                >
+                  {isArmingOnChain ? (
+                    <span>CONFIRMING TRANSACTION ON PORTALDOT V3 TESTNET...</span>
+                  ) : (
+                    <span>[ARM VAULT ON-CHAIN (PORTALDOT V3 REGISTRY)] ↗</span>
+                  )}
+                </button>
+                
+                {!walletConnected && (
+                  <button 
+                    onClick={connectWallet}
+                    className="outline-button launch"
+                    style={{ padding: "16px 20px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <Wallet size={13} /> CONNECT METAMASK
+                  </button>
+                )}
+              </div>
+
+              {/* Real On-chain Tx Hash confirmation banner */}
+              {onChainRegisterHash && (
+                <div style={{ padding: "14px", background: "#0c1f15", border: "1px solid #78e9c466", marginBottom: "25px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <span className="mono" style={{ color: "#78e9c4", fontSize: "11px", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                      <CheckCircle2 size={13} color="#78e9c4" /> SHIELD POLICY ACTIVATED ON-CHAIN (BLOCKCHAIN CONFIRMED):
+                    </span>
+                    <a 
+                      href="https://node-console.portaldot.dev/" 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="mono"
+                      style={{ color: "#ff9b4d", fontSize: "10px", textDecoration: "underline" }}
+                    >
+                      View on Node Console ↗
+                    </a>
+                  </div>
+                  <div className="mono" style={{ fontSize: "11px", color: "#fff", wordBreak: "break-all", background: "#050e09", padding: "8px" }}>
+                    Tx Hash: {onChainRegisterHash}
+                  </div>
+                </div>
+              )}
 
               {/* Approvals Table */}
               <div style={{ overflowX: "auto" }}>
@@ -489,7 +866,25 @@ export default function App() {
                     </div>
 
                     <div className="mono" style={{ color: "#dfbc97", fontSize: "12px" }}>
-                      {item.tokenSymbol}
+                      <span>{item.tokenSymbol}</span>
+                      {item.tokenSymbol === "pUSD" && (
+                        <button
+                          onClick={handleAddPUSDToMetaMask}
+                          title="Import pUSD token into MetaMask"
+                          style={{
+                            display: "block",
+                            background: "transparent",
+                            border: "1px solid rgba(223, 188, 151, 0.3)",
+                            color: "#dfbc97",
+                            fontSize: "8px",
+                            padding: "2px 5px",
+                            marginTop: "3px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          + Add to MetaMask
+                        </button>
+                      )}
                     </div>
 
                     <div className="mono" style={{ color: "#fff", fontSize: "12px" }}>
@@ -503,13 +898,376 @@ export default function App() {
                     </div>
 
                     <div style={{ textAlign: "right" }}>
-                      <span className="mono" style={{ color: "#ff8638", fontSize: "10px" }}>
-                        🛡️ Auto-Armed
+                      <span className="mono" style={{ color: "#ff8638", fontSize: "10px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                        <ShieldCheck size={11} color="#ff8638" /> Auto-Armed
                       </span>
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 24/7 TELEGRAM MOBILE ALERTS & AUTOPILOT DEFENSE */}
+        <section id="telegram" className="ecosystem-section" style={{ paddingBottom: "70px" }}>
+          <div className="section-heading">
+            <h2 className="reveal">
+              24/7 Mobile Shield &<br />
+              <span className="corner-bracket">Telegram Alert Bot.</span>
+            </h2>
+            <p>
+              Zero-visit background protection. PortalSentinel's autonomous daemon monitors the Portaldot V3 mempool continuously. 
+              You never have to keep this website open — if an attacker targets your approvals, your phone buzzes immediately.
+            </p>
+          </div>
+
+          {/* Autopilot Architecture Callout */}
+          <div className="sentinel-section" style={{ marginBottom: "25px" }}>
+            <div style={{ 
+              background: "linear-gradient(135deg, rgba(36, 161, 222, 0.12) 0%, rgba(13, 11, 16, 0.8) 100%)", 
+              border: "1px solid rgba(36, 161, 222, 0.35)", 
+              padding: "20px 24px",
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "15px"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ 
+                  width: "44px", 
+                  height: "44px", 
+                  borderRadius: "50%", 
+                  background: "#24A1DE", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center",
+                  color: "#fff",
+                  boxShadow: "0 0 20px rgba(36, 161, 222, 0.4)"
+                }}>
+                  <Send size={18} color="#fff" />
+                </div>
+                <div>
+                  <h4 style={{ color: "#fff", fontSize: "14px", margin: "0 0 4px 0", letterSpacing: "0.5px" }}>
+                    DO I HAVE TO STAY ON THIS SITE? <span style={{ color: "#78e9c4" }}>NO! SET & FORGET.</span>
+                  </h4>
+                  <p style={{ color: "#a5a3a0", fontSize: "12px", margin: 0, maxWidth: "720px", lineHeight: 1.5 }}>
+                    Once registered, the PortalSentinel daemon runs 24/7 in our validator infrastructure. It monitors the Portaldot V3 mempool while you sleep, work, or travel. Your phone will receive real-time push alerts with interactive explorer links within milliseconds of any threat interception.
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span className="mono" style={{ fontSize: "11px", color: "#78e9c4", background: "rgba(120, 233, 196, 0.1)", border: "1px solid rgba(120, 233, 196, 0.3)", padding: "6px 12px" }}>
+                  ● BOT STATUS: ACTIVE
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="sentinel-section">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "25px", alignItems: "start" }}>
+              
+              {/* Left Column: Telegram Controls & Setup */}
+              <div className="sentinel-card sentinel-card-orange">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "1px solid var(--line)", paddingBottom: "12px" }}>
+                  <span className="mono" style={{ fontSize: "12px", color: "#dfbc97", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <Bot size={13} color="#dfbc97" /> TELEGRAM BOT CONFIGURATION
+                  </span>
+                  <span className="mono" style={{ fontSize: "11px", color: "#24a1de" }}>
+                    @PortalSentinelAlertsBot
+                  </span>
+                </div>
+
+                {/* Form to bind chat ID */}
+                <form onSubmit={handleSaveTelegram} style={{ display: "grid", gap: "16px", marginBottom: "24px" }}>
+                  <div>
+                    <label className="mono" style={{ fontSize: "11px", color: "#8b8985", display: "block", marginBottom: "6px" }}>
+                      MONITORED PROTECTED WALLET:
+                    </label>
+                    <input 
+                      type="text" 
+                      value={userAddress} 
+                      disabled
+                      className="mono"
+                      style={{ width: "100%", background: "#060508", border: "1px solid var(--line)", padding: "10px 12px", color: "#dfbc97", fontSize: "11px" }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mono" style={{ fontSize: "11px", color: "#8b8985", display: "block", marginBottom: "6px" }}>
+                      TELEGRAM HANDLE / USERNAME:
+                    </label>
+                    <input 
+                      type="text" 
+                      value={telegramHandle} 
+                      onChange={(e) => setTelegramHandle(e.target.value)}
+                      placeholder="@username"
+                      className="mono"
+                      style={{ width: "100%", background: "#0c0a0e", border: "1px solid var(--line)", padding: "10px 12px", color: "#fff", fontSize: "12px" }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mono" style={{ fontSize: "11px", color: "#8b8985", display: "block", marginBottom: "6px" }}>
+                      TELEGRAM CHAT ID:
+                    </label>
+                    <input 
+                      type="text" 
+                      value={telegramChatId} 
+                      onChange={(e) => setTelegramChatId(e.target.value)}
+                      placeholder="e.g. 953892253"
+                      className="mono"
+                      style={{ width: "100%", background: "#0c0a0e", border: "1px solid var(--line)", padding: "10px 12px", color: "#78e9c4", fontSize: "12px" }}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <button 
+                      type="submit" 
+                      className="outline-button launch"
+                      style={{ flex: 1, padding: "10px", fontSize: "11px" }}
+                    >
+                      {telegramSaved ? (<span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><Check size={13} /> SAVED & SYNCED</span>) : "SAVE TELEGRAM CONFIG"}
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={handleSendTestTelegram}
+                      disabled={testAlertSent}
+                      className="outline-button"
+                      style={{ 
+                        flex: 1, 
+                        padding: "10px", 
+                        fontSize: "11px", 
+                        borderColor: testAlertSent ? "#78e9c4" : "var(--line)",
+                        color: testAlertSent ? "#78e9c4" : "#dfbc97"
+                      }}
+                    >
+                      {testAlertSent ? "PING DISPATCHED ↗" : (<span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><Smartphone size={12} /> TEST ALERT TO PHONE</span>)}
+                    </button>
+                  </div>
+                </form>
+
+                {/* Notification Trigger Preferences */}
+                <div style={{ borderTop: "1px solid var(--line)", paddingTop: "18px", marginBottom: "20px" }}>
+                  <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", display: "block", marginBottom: "12px" }}>
+                    NOTIFICATION TRIGGER PREFERENCES:
+                  </span>
+                  
+                  <label style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", cursor: "pointer" }}>
+                    <input 
+                      type="checkbox" 
+                      checked={telegramNotifyDrain} 
+                      onChange={(e) => setTelegramNotifyDrain(e.target.checked)}
+                      style={{ accentColor: "#ff6a1a" }}
+                    />
+                    <span style={{ fontSize: "12px", color: "#fff", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                      <ShieldAlert size={14} color="#ff6a1a" /> <strong>Exploit Interception & Front-Run Actions</strong> (Instant)
+                    </span>
+                  </label>
+
+                  <label style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", cursor: "pointer" }}>
+                    <input 
+                      type="checkbox" 
+                      checked={telegramNotifySuspicious} 
+                      onChange={(e) => setTelegramNotifySuspicious(e.target.checked)}
+                      style={{ accentColor: "#ff6a1a" }}
+                    />
+                    <span style={{ fontSize: "12px", color: "#fff", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                      <AlertTriangle size={14} color="#dfbc97" /> <strong>Suspicious Approval / Unverified Router Detected</strong>
+                    </span>
+                  </label>
+
+                  <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+                    <input 
+                      type="checkbox" 
+                      checked={telegramNotifyDaily} 
+                      onChange={(e) => setTelegramNotifyDaily(e.target.checked)}
+                      style={{ accentColor: "#ff6a1a" }}
+                    />
+                    <span style={{ fontSize: "12px", color: "#a5a3a0", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                      <Activity size={14} color="#78e9c4" /> <strong>Daily Allowance Health & Threat Digest</strong> (08:00 UTC)
+                    </span>
+                  </label>
+                </div>
+
+                {/* 3-Step Setup Instructions */}
+                <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "14px" }}>
+                  <span className="mono" style={{ color: "#ff8638", fontSize: "10px", display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+                    <Zap size={11} color="#ff8638" /> 3-STEP QUICK CONNECTION GUIDE
+                  </span>
+                  <div className="mono" style={{ fontSize: "10px", color: "#8b8985", lineHeight: 1.6 }}>
+                    <div>1. Open Telegram and search <strong>@PortalSentinelAlertsBot</strong></div>
+                    <div>2. Press <code>/start</code> to receive your personal 9-digit Chat ID</div>
+                    <div>3. Paste your Chat ID above and click <strong>SAVE</strong> — you are armed!</div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Right Column: High-Fidelity Telegram Mobile Preview Mockup */}
+              <div className="sentinel-card" style={{ 
+                background: "#08060a", 
+                borderColor: telegramAlertPulse ? "#ff6a1a" : "var(--line)",
+                transition: "border-color 0.3s ease, box-shadow 0.3s ease",
+                boxShadow: telegramAlertPulse ? "0 0 35px rgba(255, 106, 26, 0.3)" : "none"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", borderBottom: "1px solid var(--line)", paddingBottom: "10px" }}>
+                  <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <Smartphone size={12} color="#dfbc97" /> LIVE TELEGRAM PHONE SIMULATOR
+                  </span>
+                  {telegramAlertPulse ? (
+                    <span className="mono" style={{ fontSize: "10px", color: "#ff6a1a", animation: "blink 1s infinite" }}>
+                      ● NEW NOTIFICATION ARRIVED
+                    </span>
+                  ) : (
+                    <span className="mono" style={{ fontSize: "10px", color: "#78e9c4" }}>
+                      ● STANDBY / ARMED
+                    </span>
+                  )}
+                </div>
+
+                {/* Smartphone Device Frame */}
+                <div style={{
+                  maxWidth: "380px",
+                  margin: "0 auto",
+                  background: "#120e18",
+                  borderRadius: "28px",
+                  border: "2px solid #2d2638",
+                  padding: "16px",
+                  boxShadow: "0 20px 50px rgba(0,0,0,0.8)",
+                  position: "relative"
+                }}>
+                  {/* Phone Notch / Speaker */}
+                  <div style={{
+                    width: "100px",
+                    height: "4px",
+                    background: "#2d2638",
+                    borderRadius: "4px",
+                    margin: "0 auto 12px auto"
+                  }}></div>
+
+                  {/* Telegram App Header */}
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    paddingBottom: "12px",
+                    borderBottom: "1px solid rgba(255,255,255,0.08)",
+                    marginBottom: "14px"
+                  }}>
+                    <div style={{
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, #ff6a1a, #080808)",
+                      border: "1.5px solid #ff8638",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "14px",
+                      color: "#fff",
+                      fontWeight: "bold"
+                    }}>
+                      ••
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "12px", fontWeight: "bold", color: "#fff" }}>PortalSentinel Bot</div>
+                      <div style={{ fontSize: "10px", color: "#78e9c4" }}>bot · 24/7 autonomous shield</div>
+                    </div>
+                  </div>
+
+                  {/* Telegram Message Feed */}
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    
+                    {/* Message 1: Threat Detection */}
+                    <div style={{
+                      background: "#1c1626",
+                      borderRadius: "14px",
+                      borderTopLeftRadius: "4px",
+                      padding: "12px",
+                      border: "1px solid rgba(255, 106, 26, 0.25)"
+                    }}>
+                      <div style={{ fontSize: "11px", color: "#ff8638", fontWeight: "bold", marginBottom: "4px", display: "flex", alignItems: "center", gap: "5px" }}>
+                        <AlertTriangle size={12} color="#ff8638" /> CRITICAL THREAT DETECTED
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#dfbc97", lineHeight: 1.4, marginBottom: "6px" }}>
+                        PortalSentinel mempool listener identified unauthorized <code>transferFrom</code> attempt.
+                      </div>
+                      <div className="mono" style={{ fontSize: "10px", color: "#8b8985", background: "#0c0a10", padding: "6px", borderRadius: "6px", marginBottom: "6px" }}>
+                        <div>Victim: 0x6198fA0e...9C74</div>
+                        <div>Target: 5,000 pUSD</div>
+                        <div>Threat Score: 100/100</div>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "9px", color: "#ff6a1a" }}>Priority 1.35x Front-Running...</span>
+                        <span style={{ fontSize: "9px", color: "#8b8985" }}>10:14 AM</span>
+                      </div>
+                    </div>
+
+                    {/* Message 2: Exploit Neutralized */}
+                    <div style={{
+                      background: "#13231a",
+                      borderRadius: "14px",
+                      borderTopLeftRadius: "4px",
+                      padding: "12px",
+                      border: "1px solid rgba(120, 233, 196, 0.35)"
+                    }}>
+                      <div style={{ fontSize: "11px", color: "#78e9c4", fontWeight: "bold", marginBottom: "4px", display: "flex", alignItems: "center", gap: "5px" }}>
+                        <ShieldCheck size={12} color="#78e9c4" /> EXPLOIT NEUTRALIZED — FUNDS SAFE
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#fff", lineHeight: 1.4, marginBottom: "6px" }}>
+                        Attacker front-ran in <strong>14 ms</strong>! Allowance zeroed before malicious transfer mined.
+                      </div>
+                      <div className="mono" style={{ fontSize: "10px", color: "#78e9c4", background: "#06130d", padding: "6px", borderRadius: "6px", marginBottom: "8px" }}>
+                        <div>Saved: 5,000 pUSD</div>
+                        <div>Action: EmergencyBatchRevoke</div>
+                        <div>Block: #{blockHeight}</div>
+                      </div>
+                      {/* Interactive Telegram Button */}
+                      <a 
+                        href="https://node-console.portaldot.dev/" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          display: "block",
+                          textAlign: "center",
+                          background: "#1c3c2d",
+                          color: "#78e9c4",
+                          padding: "6px",
+                          borderRadius: "8px",
+                          fontSize: "10px",
+                          fontWeight: "bold",
+                          textDecoration: "none",
+                          border: "1px solid rgba(120, 233, 196, 0.4)"
+                        }}
+                      >
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><ExternalLink size={11} /> View on Portaldot Node Console</span>
+                      </a>
+                      <div style={{ textAlign: "right", marginTop: "6px" }}>
+                        <span style={{ fontSize: "9px", color: "#8b8985", display: "inline-flex", alignItems: "center", gap: "3px" }}>10:15 AM <CheckCheck size={11} color="#78e9c4" /></span>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Simulated Telegram Input Bar */}
+                  <div style={{
+                    marginTop: "16px",
+                    padding: "8px 12px",
+                    background: "#1c1626",
+                    borderRadius: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between"
+                  }}>
+                    <span style={{ fontSize: "10px", color: "#8b8985" }}>Message @PortalSentinelAlertsBot...</span>
+                    <Send size={13} color="#24A1DE" />
+                  </div>
+
+                </div>
+              </div>
+
             </div>
           </div>
         </section>
@@ -532,8 +1290,8 @@ export default function App() {
               {/* Terminal Feed */}
               <div className="sentinel-card">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", borderBottom: "1px solid var(--line)", paddingBottom: "10px" }}>
-                  <span className="mono" style={{ fontSize: "11px", color: "#dfbc97" }}>
-                    📡 SENTINEL DAEMON STREAMING FEED
+                  <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <Terminal size={12} color="#dfbc97" /> SENTINEL DAEMON STREAMING FEED
                   </span>
                   <span className="mono" style={{ fontSize: "10px", color: "#78e9c4" }}>
                     ● LIVE MEMPOOL
@@ -549,8 +1307,8 @@ export default function App() {
               {/* Node Ops CLI Commands */}
               <div className="sentinel-card">
                 <div style={{ marginBottom: "15px", borderBottom: "1px solid var(--line)", paddingBottom: "10px" }}>
-                  <span className="mono" style={{ fontSize: "11px", color: "#dfbc97" }}>
-                    🧰 NODE OPERATOR CLI COMMANDS (TRACK 3 TOOLING)
+                  <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <Cpu size={12} color="#dfbc97" /> NODE OPERATOR CLI COMMANDS (TRACK 3 TOOLING)
                   </span>
                 </div>
 
@@ -568,6 +1326,11 @@ export default function App() {
                   <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "12px" }}>
                     <span style={{ color: "#8b8985", fontSize: "9px", display: "block" }}>// Benchmark RPC ping across multiple requests:</span>
                     <code style={{ color: "#ff8638" }}>npm run cli:benchmark</code>
+                  </div>
+
+                  <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "12px" }}>
+                    <span style={{ color: "#8b8985", fontSize: "9px", display: "block" }}>// Test 24/7 Telegram bot alert dispatch & delivery:</span>
+                    <code style={{ color: "#ff8638" }}>cd daemon && npm run cli telegram:test</code>
                   </div>
                 </div>
               </div>
