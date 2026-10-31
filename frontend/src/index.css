@@ -151,3 +151,46 @@
     transform: rotate(-360deg);
   }
 }
+
+/* Sentinel Guardian Robot - Positioned exactly inside the Red Circle */
+.hero-guardian-dock {
+  position: absolute;
+  left: 71%;
+  top: 410px;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+@media (max-width: 1200px) {
+  .hero-guardian-dock {
+    left: 71%;
+    top: 405px;
+    transform: translateX(-50%) scale(0.82);
+    transform-origin: top center;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero-guardian-dock {
+    left: 71%;
+    top: 400px;
+    transform: translateX(-50%) scale(0.72);
+    transform-origin: top center;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-guardian-dock {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    margin: 25px auto 10px;
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -250,41 +250,39 @@ export default function App() {
               </svg>
             </div>
 
-            <div className="hero-title" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "35px" }}>
-              <div style={{ flex: "1 1 450px", maxWidth: "600px" }}>
-                <p className="mono" id="story-eyebrow">AUTONOMOUS ON-CHAIN FIREWALL & CIRCUIT BREAKER</p>
-                <h1 id="story-title">
-                  DETECT.<br /> PREEMPT.<br /> <span>DEFEND.</span>
-                </h1>
-                <p className="story-description" id="story-description">
-                  An autonomous closed-loop circuit breaker purpose-built for Portaldot V3 EVM (pallet-revive). 
-                  When zero-day drainers or malicious router exploits strike, PortalSentinel front-runs attackers with 
-                  1.35x priority gas escalation—revoking allowances and sweeping capital to cold vaults before malicious transactions finalize.
-                </p>
+            <div className="hero-title">
+              <p className="mono" id="story-eyebrow">AUTONOMOUS ON-CHAIN FIREWALL & CIRCUIT BREAKER</p>
+              <h1 id="story-title">
+                DETECT.<br /> PREEMPT.<br /> <span>DEFEND.</span>
+              </h1>
+              <p className="story-description" id="story-description">
+                An autonomous closed-loop circuit breaker purpose-built for Portaldot V3 EVM (pallet-revive). 
+                When zero-day drainers or malicious router exploits strike, PortalSentinel front-runs attackers with 
+                1.35x priority gas escalation—revoking allowances and sweeping capital to cold vaults before malicious transactions finalize.
+              </p>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center", marginTop: "24px" }}>
-                  <button 
-                    className="agent-cta" 
-                    onClick={handleSimulateAttack}
-                    disabled={isSimulating}
-                  >
-                    {isSimulating ? "DEFENSE IN PROGRESS..." : "SIMULATE EXPLOIT ATTACK"} <span>↗</span>
-                  </button>
-                  <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", border: "1px solid #30261e", padding: "14px 18px", background: "#0e0c0a" }}>
-                    🔒 ZERO-CUSTODY INVARIANT
-                  </span>
-                </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center", marginTop: "24px" }}>
+                <button 
+                  className="agent-cta" 
+                  onClick={handleSimulateAttack}
+                  disabled={isSimulating}
+                >
+                  {isSimulating ? "DEFENSE IN PROGRESS..." : "SIMULATE EXPLOIT ATTACK"} <span>↗</span>
+                </button>
+                <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", border: "1px solid #30261e", padding: "14px 18px", background: "#0e0c0a" }}>
+                  🔒 ZERO-CUSTODY INVARIANT
+                </span>
               </div>
+            </div>
 
-              {/* Big Animated Sentinel Guardian (••) with Blinking & Tracking Eyes */}
-              <div style={{ flex: "0 0 auto", display: "flex", justifyContent: "center", alignItems: "center", marginLeft: "auto", marginRight: "20px", transform: "translateX(25px)" }}>
-                <SentinelGuardian
-                  size={310}
-                  simStep={simStep}
-                  isSimulating={isSimulating}
-                  onTriggerDefense={handleSimulateAttack}
-                />
-              </div>
+            {/* Sentinel Guardian Robot Placed Exactly In The Red Circle Position */}
+            <div className="hero-guardian-dock" aria-label="Sentinel Guardian Autonomous Defense Bot">
+              <SentinelGuardian
+                size={290}
+                simStep={simStep}
+                isSimulating={isSimulating}
+                onTriggerDefense={handleSimulateAttack}
+              />
             </div>
 
             <div className="phase-panel mono" id="phase-panel">
