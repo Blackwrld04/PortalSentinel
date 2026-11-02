@@ -71,7 +71,7 @@ export class TelegramNotifier {
   }
 
   /**
-   * Alert dispatched when an inbound threat / malicious drain is detected in mempool
+   * Alert dispatched when an inbound threat / malicious drain is detected in a block
    */
   public async sendThreatDetectedAlert(
     signal: ThreatSignal,
@@ -81,12 +81,14 @@ export class TelegramNotifier {
     const severityBadge =
       evaluation.threatScore >= 80 ? "<b>[CRITICAL THREAT DETECTED]</b>" :
       evaluation.threatScore >= 60 ? "<b>[HIGH THREAT DETECTED]</b>" : "<b>[SUSPICIOUS ACTIVITY]</b>";
+    const simulationBadge = signal.simulated ? "[SIMULATION] " : "";
 
     const message = [
-      `${severityBadge} — <b>PortalSentinel Defense</b>`,
+      `${simulationBadge}${severityBadge} — <b>PortalSentinel Defense</b>`,
       ``,
       `<b>Victim Vault:</b> <code>${signal.targetVictim}</code>`,
-      `<b>Attacker/Spender:</b> <code>${signal.sourceAddress}</code>`,
+      `<b>Attacker:</b> <code>${signal.sourceAddress}</code>`,
+      `<b>Approved Spender:</b> <code>${signal.spenderAddress}</code>`,
       `<b>Target Asset:</b> <code>${signal.tokenAddress}</code>`,
       `<b>Threat Risk Score:</b> <b>${evaluation.threatScore}/100</b> [${evaluation.severity}]`,
       `<b>Block Detected:</b> #${signal.blockNumber}`,
@@ -95,7 +97,9 @@ export class TelegramNotifier {
       `<b>Risk Indicators:</b>`,
       ...evaluation.reasons.map((r) => ` • ${r}`),
       ``,
-      `<i>PortalSentinel is autonomously dispatching front-run transaction on Portaldot V3 EVM...</i>`
+      signal.simulated
+        ? `<i>Simulation only — no transaction was broadcast.</i>`
+        : `<i>PortalSentinel is autonomously dispatching a defense transaction on Portaldot V3 EVM...</i>`
     ].join("\n");
 
     return this.sendMessage(message, { chatId: customChatId, parseMode: "HTML" });
@@ -111,22 +115,38 @@ export class TelegramNotifier {
     customChatId?: string
   ): Promise<boolean> {
     const isSuccess = result.success;
+    const isSimulated = result.simulated;
     const header = isSuccess
-      ? `<b>[EXPLOIT NEUTRALIZED — CAPITAL PRESERVED]</b>`
+      ? isSimulated
+        ? `<b>[DRY RUN — DEFENSE SIMULATED]</b>`
+        : `<b>[DEFENSE CONFIRMED ON-CHAIN]</b>`
       : `<b>[DEFENSE WARNING — ACTION FAILED]</b>`;
+
+    const statusLine = isSuccess
+      ? isSimulated
+        ? `<b>Simulated Latency:</b> <b>${result.latencyMs} ms</b> (simulation only)`
+        : `<b>Defense Latency:</b> <b>${result.latencyMs} ms</b> (confirmed on-chain)`
+      : `<b>Failure Reason:</b> <code>${result.error || "unknown"}</code>`;
 
     const message = [
       `${header}`,
       ``,
       `<b>Victim Address:</b> <code>${signal.targetVictim}</code>`,
       `<b>Defense Action:</b> <code>${result.actionExecuted}</code>`,
-      `<b>Preemption Latency:</b> <b>${result.latencyMs} ms</b> (Front-Ran Attacker)`,
+      statusLine,
+      `<b>Attempts:</b> ${result.attempts}`,
       `<b>Mined in Block:</b> #${result.blockNumber}`,
-      `<b>Tx Hash:</b> <code>${result.txHash}</code>`,
+      result.txHash ? `<b>Tx Hash:</b> <code>${result.txHash}</code>` : `<b>Tx Hash:</b> not broadcast`,
       ``,
-      `<a href="${CONFIG.network.nodeExplorerUrl}">View on Portaldot Node Console</a>`,
+      result.txHash
+        ? `<a href="${CONFIG.network.nodeExplorerUrl}">View on Portaldot Node Console</a>`
+        : ``,
       ``,
-      `<i>Your funds have been protected by PortalSentinel's autonomous circuit breaker. No further action is required.</i>`
+      isSimulated
+        ? `<i>Dry-run mode: no transaction was broadcast.</i>`
+        : isSuccess
+          ? `<i>The configured defense was confirmed on-chain. Verify the transaction before assuming the incident is fully resolved.</i>`
+          : `<i>Automatic defense failed. Manual intervention may be required.</i>`,
     ].join("\n");
 
     return this.sendMessage(message, { chatId: customChatId, parseMode: "HTML" });
@@ -143,7 +163,7 @@ export class TelegramNotifier {
       `<b>Network:</b> ${CONFIG.network.name} (Chain ID: ${CONFIG.network.chainId})`,
       `<b>Engine:</b> pallet-revive RISC-V PolkaVM Circuit Breaker`,
       ``,
-      `<i>You will receive instant push notifications whenever suspicious approvals or mempool drain transactions target your enrolled wallets. You do NOT need to keep the web application open!</i>`
+      `<i>You will receive a Telegram push notification when the daemon detects the configured signal on your enrolled wallets. You do NOT need to keep the web application open.</i>`
     ].join("\n");
 
     return this.sendMessage(message, { chatId, parseMode: "HTML" });

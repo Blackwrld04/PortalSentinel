@@ -1,12 +1,26 @@
 # PortalSentinel
 
-**Autonomous closed-loop security firewall and mempool circuit breaker for Portaldot V3 EVM (`pallet-revive` RISC-V PolkaVM) — detecting zero-day approval drains, front-running attackers in under 15ms with priority gas escalation, and delivering 24/7 mobile protection via Telegram.**
+**Autonomous closed-loop security firewall and block-level circuit breaker for Portaldot V3 EVM (`pallet-revive` RISC-V PolkaVM) — detecting approval drains, dispatching a priority-gas defense, and delivering 24/7 mobile protection via Telegram.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Network: Portaldot V3](https://img.shields.io/badge/Network-Portaldot%20V3%20(420420777)-purple.svg)](https://node-console.portaldot.dev/)
-[![Foundry Tests](https://img.shields.io/badge/Foundry%20Tests-6%2F6%20Passing-brightgreen.svg)](contracts/)
+[![Foundry Tests](https://img.shields.io/badge/Foundry%20Tests-12%2F12%20Passing-brightgreen.svg)](contracts/)
 [![Track: Node Operations & Tooling](https://img.shields.io/badge/DoraHacks-Track%203%20Tooling-orange.svg)](docs/DORAHACKS_SUBMISSION_KIT.md)
 [![Substrate Engine](https://img.shields.io/badge/Engine-pallet--revive%20%2F%20PolkaVM-black.svg)](https://node-console.portaldot.dev/)
+
+> **Production status:** this repository is being hardened from a hackathon demo into an
+> operator-grade service. See
+> [`docs/PRODUCTION_HARDENING_PLAN.md`](docs/PRODUCTION_HARDENING_PLAN.md) for the
+> P0/P1/P2 roadmap and the exact remaining gaps.
+>
+> **Detection scope today:** the daemon watches the demo `MockExploitFixture`
+> `AttackInitiated` event over a block poll. That event is emitted *inside the drain
+> transaction*, so by the time the daemon sees it the triggering transfer has already
+> mined. The defense protects the **remaining allowance and balance** by revoking the
+> approval and (when the executor is approved) sweeping the remaining tokens to the
+> user's cold safe. It does not undo the transfer that emitted the signal, and it is not
+> yet a general-purpose mempool detector. Live transaction inspection, spender
+> reputation, and observe-only rollout are P1.
 
 ---
 
@@ -14,7 +28,7 @@
 
 1. [What Is PortalSentinel?](#1-what-is-portalsentinel)
 2. [Track 3: Node Operations & Tooling — How This Fits](#2-track-3-node-operations--tooling--how-this-fits)
-3. [Why Portaldot V3 (`pallet-revive`) — And Why Sub-Second Front-Running Requires It](#3-why-portaldot-v3-pallet-revive--and-why-sub-second-front-running-requires-it)
+3. [Why Portaldot V3 (`pallet-revive`) — And Why Low Latency Matters](#3-why-portaldot-v3-pallet-revive--and-why-low-latency-matters)
 4. [The Dual-Defense Architecture (Solving the Standard ERC-20 Flaw)](#4-the-dual-defense-architecture-solving-the-standard-erc-20-flaw)
 5. [24/7 Mobile Shield — Telegram Bot Autopilot](#5-247-mobile-shield--telegram-bot-autopilot)
 6. [Living Sentinel Guardian Robot & Cyberpunk Dashboard](#6-living-sentinel-guardian-robot--cyberpunk-dashboard)
@@ -38,11 +52,11 @@ Existing security tools are **passive and forensic** — they alert users minute
 
 **PortalSentinel** eliminates the human latency bottleneck with an **autonomous closed-loop firewall**:
 
-1. **Sub-Second Threat Detection:** The Sentinel Daemon streams inbound blocks and mempool calls directly from Portaldot V3 EVM (`pallet-revive`), evaluating transfer velocity, unverified router signatures, and allowance drains against a heuristic anomaly scoring matrix in **<1ms**.
-2. **1.35x Priority Gas Preemption (Front-Running the Attacker):** When a critical threat is confirmed (score $\ge 60$), the daemon dispatches an emergency counter-transaction with a **$1.35\times$ priority fee multiplier**, guaranteeing that the circuit breaker transaction is ordered and mined **before** the attacker's drain transaction.
-3. **Universal Dual-Defense (Solving the ERC-20 Flaw):** Standard ERC-20 tokens (like USDC or native wrapped assets) do not support external revocation. PortalSentinel solves this by executing an atomic batch revocation where possible, and an **Emergency Capital Sweep** (`executeEmergencySweep`) that transfers the victim's token balance directly into their pre-registered cold vault (`emergencySafe`), rescuing capital before the exploit executes.
+1. **Sub-Second Threat Detection:** The Sentinel Daemon polls inbound blocks from Portaldot V3 EVM (`pallet-revive`), decodes attack events, and evaluates them against a heuristic anomaly scoring matrix in **<1ms**.
+2. **Priority Fee Escalation:** When a threat crosses the user's threshold, the daemon dispatches a counter-transaction with a **1.35× fee multiplier** (rising to 1.60× and 1.85× on retries). Higher fees improve inclusion odds but do **not** guarantee ordering ahead of an attacker; the daemon reports what actually happened on-chain.
+3. **Universal Dual-Defense (Solving the ERC-20 Flaw):** Standard ERC-20 tokens do not support third-party revocation. PortalSentinel executes an atomic batch revocation where the token supports a guardian hook, and an **Emergency Capital Sweep** (`executeEmergencySweep`) that transfers the victim's remaining token balance into their pre-registered cold vault (`emergencySafe`). A sweep is chosen only when the victim has approved the executor; after a sweep the daemon also attempts to zero the attacker's residual allowance.
 4. **Zero-Custody Guarantee:** By smart contract invariant, the Sentinel Guardian operator can **never** divert funds to itself. Capital can strictly and only be transferred to the user's immutable emergency safe.
-5. **24/7 Background Autopilot (Telegram Bot):** Users enroll once and walk away. The daemon runs 24/7 in validator infrastructure. Whenever an exploit is preempted, an instant push advisory lands on the user's phone via `@PortalSentinelAlertsBot` with verified explorer links.
+5. **24/7 Background Autopilot (Telegram Bot):** Users enroll once and walk away. The daemon runs continuously; when a defense is dispatched, a Telegram advisory is sent with the real transaction hash (or an explicit dry-run/failure notice).
 
 ---
 
@@ -59,12 +73,12 @@ PortalSentinel was built specifically for **DoraHacks Portaldot Hacker House 202
 
 ---
 
-## 3. Why Portaldot V3 (`pallet-revive`) — And Why Sub-Second Front-Running Requires It
+## 3. Why Portaldot V3 (`pallet-revive`) — And Why Low Latency Matters
 
 PortalSentinel is not a generic EVM script ported to Portaldot. It was engineered specifically to exploit the architectural capabilities of **Portaldot Network V3.0 (`pallet-revive` on Substrate RISC-V PolkaVM)**:
 
 ### 3.1 Sub-Second Block Times (~1000ms)
-Traditional Layer 1 blockchains (such as Ethereum with 12-second slots) suffer from unpredictable mempool reordering and heavy MEV searcher competition. Portaldot V3's sub-second block times allow our local/colocated daemon to detect, evaluate, and broadcast a defense transaction within **10 to 15 milliseconds**, guaranteeing preemption in the very next tick.
+Traditional Layer 1 blockchains (such as Ethereum with 12-second slots) suffer from unpredictable transaction ordering and heavy MEV searcher competition. Portaldot V3's sub-second block times let a colocated daemon evaluate a signal and broadcast a defense transaction for inclusion in the next block tick. Actual preemption depends on block timing, RPC behavior, and gas priority; the measured figure in the demo is dispatch latency, not a guaranteed front-run.
 
 ### 3.2 RISC-V PolkaVM Bytecode Execution
 `pallet-revive` executes smart contracts via PolkaVM (a general-purpose RISC-V virtual machine) with REVM integration. This provides predictable execution cycles and negligible interpretation overhead, allowing complex batch revocations and multi-token sweeps to execute without hitting block gas limits.
@@ -111,16 +125,16 @@ PortalSentinel implements a **Dual-Defense Model**:
     Attacker Call Reverts                 to User's Immutable Cold Safe!
 ```
 
-1. **`executeEmergencyBatchRevoke`**: Zeroes allowances across multiple tokens and spenders in a single atomic transaction.
-2. **`executeEmergencySweep`**: If an allowance cannot be modified by a third party, the contract sweeps the user's token balance directly into their pre-registered `emergencySafe`. The victim's funds are safe in cold storage before the attacker's drain transaction can execute!
+1. **`executeEmergencyBatchRevoke`**: Zeroes allowances across multiple tokens and spenders in a single atomic transaction, and verifies each allowance actually reached zero before reporting success.
+2. **`executeEmergencySweep`**: When the allowance cannot be modified by a third party, the contract sweeps the user's remaining token balance directly into their pre-registered `emergencySafe`. This protects funds still in the wallet; it cannot reverse a transfer that already mined.
 
 ### Zero-Custody Contract Invariant
 In `DefenseExecutor.sol`:
 ```solidity
-function executeEmergencySweep(address user, address[] calldata tokens) external onlyGuardian {
+function executeEmergencySweep(address user, address[] calldata tokens, uint256 threatScore) external onlyAuthorizedGuardian {
     address coldSafe = registry.getEmergencySafe(user);
     require(coldSafe != address(0), "DefenseExecutor: No emergency safe configured");
-    require(coldSafe != guardian, "DefenseExecutor: Zero-custody invariant violated");
+    require(coldSafe != msg.sender, "DefenseExecutor: Zero-custody invariant violated");
 
     for (uint256 i = 0; i < tokens.length; i++) {
         uint256 balance = IERC20(tokens[i]).balanceOf(user);
@@ -137,22 +151,26 @@ function executeEmergencySweep(address user, address[] calldata tokens) external
 ## 5. 24/7 Mobile Shield — Telegram Bot Autopilot
 
 ### Do Users Need to Keep the Website Open?
-**NO!** Users register their wallet and configure their sensitivity threshold once. PortalSentinel's autonomous daemon runs 24/7 in cloud/validator infrastructure. If an exploit targets an enrolled wallet while the user is asleep or traveling, the daemon preempts the attack on-chain and dispatches an instant push notification directly to their phone.
+**NO!** Users register their wallet and configure their sensitivity threshold once. The daemon runs 24/7 on a host the operator controls. When the configured detection signal fires, it attempts an on-chain defense and sends a Telegram advisory. In the current P0 detection scope the signal comes from the demo fixture after its drain transaction has mined, so the defense protects the *remaining* allowance and balance rather than reversing that first transfer.
 
 ### Interactive 2-Way Bot Commands (`@PortalSentinelAlertsBot`)
-Node operators and users can interact with the live Telegram service (`npm run telegram:bot`):
+Node operators and users can interact with the Telegram service (`npm run telegram:bot`):
 * `/start` — Welcome advisory, automatic Chat ID extraction, and wallet binding instructions.
-* `/status` — Live Portaldot V3 EVM block height, latency, and circuit breaker status.
-* `/audit <0xAddress>` — Audits an address on-chain for open allowances and risk scores.
+* `/status` — Current Portaldot V3 EVM block height and gas price from the configured RPC.
+* `/audit <0xAddress>` — Reports native balance, account type, and whether the registry marks the address as protected. Allowance-level detail is available through `npm run cli audit`.
 * `/help` — Lists command manual.
 
 ### Push Notification Structure
-When an attack is neutralized, the user receives an alert with:
+When a defense is dispatched, the user receives an alert with:
 * Threat Severity Badge (`[CRITICAL THREAT]`)
-* Preemption Latency Benchmark (e.g. `14 ms - Front-Ran Attacker`)
-* Total Capital Rescued (e.g. `5,000 pUSD`)
-* Verified Block Number & On-Chain Transaction Hash
+* Defense latency from broadcast to confirmation (labelled as such; not a "front-run" guarantee)
+* Amount moved to the cold safe when a sweep actually ran
+* Confirmed block number and transaction hash for live defenses, or an explicit dry-run/failure notice
 * Direct Clickable Link to [Portaldot Node Console Explorer](https://node-console.portaldot.dev/)
+
+**Secret handling:** `TELEGRAM_BOT_TOKEN` belongs only in `daemon/.env` (or the daemon's secret
+store). The dashboard has no bot token and does not call the Telegram API. If a token has ever
+been committed or shipped in a frontend bundle, revoke it with `@BotFather` and issue a new one.
 
 ---
 
@@ -161,17 +179,17 @@ When an attack is neutralized, the user receives an alert with:
 The frontend command center (`http://localhost:3002`) provides a state-of-the-art interactive experience:
 
 * **Living Cybernetic Guardian Bot (`SentinelGuardian.tsx`):**
-  * Features blinking neon digital eyes that autonomously scan the mempool and smoothly track the user's cursor.
+  * Features blinking neon digital eyes that autonomously scan incoming blocks and smoothly track the user's cursor.
   * Counter-rotating telemetry rings and dynamic floating physics with live status halos.
 * **Live Web3 Wallet Connection (Pillar 2):**
   * One-click MetaMask / Rabby wallet connection.
   * Automatic network detection and switching to **Portaldot V3 Testnet (`420420777`)**.
   * Real-time native `POT` gas balance display and Substrate SS58 identity linking.
-* **Interactive Exploit & Defense Sandbox:**
-  * Simulate zero-day drain attacks on Portaldot V3 EVM.
-  * Visual 5-phase timeline tracking Exploit Trigger $\rightarrow$ Threat Scoring $\rightarrow$ 1.35x Gas Escalation $\rightarrow$ Atomic Revocation $\rightarrow$ Capital Rescued.
-* **Live Smartphone Simulator:**
-  * Real-time Telegram mobile phone preview mockup demonstrating instant alert delivery.
+* **Interactive Exploit & Defense Walkthrough:**
+  * Step through a local UI simulation of a drain response on Portaldot V3 EVM. It does not sign or broadcast.
+  * Visual 5-phase timeline tracking Exploit Trigger $\rightarrow$ Threat Scoring $\rightarrow$ 1.35x Fee Escalation $\rightarrow$ Atomic Revocation $\rightarrow$ Remaining Funds Swept to Safe.
+* **Telegram Alert Preview:**
+  * Illustrative mockup of the alert format. Messages are sent by the daemon, not the browser.
 
 ---
 
@@ -195,7 +213,7 @@ npm run cli benchmark
 npm run cli matrix
 
 # 5. Verify 24/7 Telegram notification dispatch
-npm run cli telegram:test 953892253
+npm run cli telegram:test <your-chat-id>
 ```
 
 ---
@@ -215,6 +233,17 @@ docker compose logs -f
 docker ps --filter "name=portal-sentinel-daemon"
 ```
 
+The daemon runs as a non-root `sentinel` user and persists its last-processed-block
+journal in the named volume `sentinel-data` mounted at `/data`, so restarts resume from
+the last scanned block instead of replaying (or skipping) history. Override
+`GUARDIAN_PRIVATE_KEY` and `DRY_RUN=false` through the environment or a local `.env`
+when you are ready to broadcast; the compose defaults stay in dry-run.
+
+On a live start the daemon refuses to run if `DefenseExecutor.registry()` does not match
+`SENTINEL_REGISTRY_ADDRESS`, if the registry is paused, or if the guardian key is not an
+authorized guardian. That check converts the most common deployment mistake into a
+startup error rather than a silent string of reverted defenses.
+
 ---
 
 ## 9. Repository Structure
@@ -230,14 +259,16 @@ PortalSentinel/
 │   ├── script/
 │   │   └── DeployPortalSentinel.s.sol # Testnet deployment script
 │   └── test/
-│       └── PortalSentinel.t.sol   # 6/6 Passing Foundry test suite
+│       └── PortalSentinel.t.sol   # 12/12 Passing Foundry test suite
 │
 ├── daemon/                        # Closed-Loop Threat Engine & Node CLI
 │   ├── src/
 │   │   ├── index.ts               # Autonomous daemon entrypoint
-│   │   ├── listener.ts            # Sub-second block stream listener
+│   │   ├── listener.ts            # Band-scoped block scanner with persisted journal
 │   │   ├── threatScorer.ts        # Heuristic anomaly scoring matrix
-│   │   ├── dispatcher.ts          # 1.35x Priority fee front-run dispatcher
+│   │   ├── defensePlan.ts         # Pure action-selection/viability logic
+│   │   ├── dispatcher.ts          # Fee-escalating defense dispatcher (retries, nonce mgmt)
+│   │   ├── state.ts               # Atomic block-journal persistence
 │   │   ├── telegramNotifier.ts    # 24/7 Mobile push alert service
 │   │   ├── telegramBot.ts         # Interactive 2-way Telegram bot listener
 │   │   ├── cli.ts                 # Node operator CLI tooling suite
@@ -272,17 +303,28 @@ PortalSentinel/
 * Foundry (`forge`, `cast`)
 * MetaMask / Web3 Wallet
 
+### 0. Configure safely
+```bash
+cp daemon/.env.example daemon/.env
+# Keep DRY_RUN=true until you have deployed contracts and a dedicated guardian key.
+# A missing GUARDIAN_PRIVATE_KEY is fine in dry-run mode; it is required to broadcast.
+```
+
 ### 1. Install Dependencies & Build
 ```bash
 # Install root, daemon, and frontend dependencies
 npm run build
 ```
 
-### 2. Run Smart Contract Test Suite
+### 2. Run Smart Contract & Daemon Tests
 ```bash
+# Foundry: 12 tests, including fuzz coverage of the sweep invariant
 npm run test
+
+# Daemon: scorer + state-journal unit tests
+npm run test:unit
 ```
-*Result: 6 tests passed, 0 failed.*
+*Result: 12/12 Foundry tests and 15/15 daemon tests pass.*
 
 ### 3. Run Node Operator Health Probe
 ```bash
@@ -309,13 +351,24 @@ npm run dev
 | Variable | Description | Default / Example |
 |---|---|---|
 | `PORTALDOT_RPC_URL` | Portaldot V3 EVM JSON-RPC endpoint | `https://test-evm-rpc-v3.portaldot.dev` |
+| `PORTALDOT_RPC_URLS` | Optional comma-separated failover endpoints | *(unset)* |
 | `PORTALDOT_CHAIN_ID` | EVM Chain ID | `420420777` |
+| `PORTALDOT_REQUEST_TIMEOUT_MS` | Per-request RPC timeout | `10000` |
+| `PORTALDOT_LOG_RANGE_BLOCKS` | Blocks per `getLogs` batch during catch-up | `500` |
 | `SENTINEL_REGISTRY_ADDRESS` | Deployed SentinelRegistry contract | `0x5FbDB2315678afecb367f032d93F642f64180aa3` |
 | `DEFENSE_EXECUTOR_ADDRESS` | Deployed DefenseExecutor contract | `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512` |
-| `GUARDIAN_PRIVATE_KEY` | Operator private key for defense dispatch | *Configurable hex private key* |
+| `MOCK_TOKEN_ADDRESS` | Token watched by the demo fixture | `0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0` |
+| `MOCK_EXPLOIT_ADDRESS` | Demo attack fixture / log emitter | `0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9` |
+| `GUARDIAN_PRIVATE_KEY` | Operator key for defense dispatch. **Required only when `DRY_RUN=false`.** | *(no default)* |
+| `DRY_RUN` | Simulate defense decisions without broadcasting | `true` |
+| `DEFENSE_MAX_ATTEMPTS` | Pre-broadcast retry attempts | `3` |
+| `DEFENSE_RECEIPT_TIMEOUT_MS` | Receipt wait before reporting a pending tx | `60000` |
+| `STATE_FILE` | Persisted last-processed-block journal | `.sentinel-state.json` (`/data/...` in Docker) |
 | `TELEGRAM_BOT_TOKEN` | Bot API token from `@BotFather` | `123456789:ABCdef...` |
-| `TELEGRAM_CHAT_ID` | Default Telegram chat ID for alerts | `953892253` |
+| `TELEGRAM_CHAT_ID` | Default Telegram chat ID for alerts | `123456789` |
 | `TELEGRAM_ALERTS_ENABLED` | Toggle 24/7 Telegram dispatch | `true` |
+| `METRICS_HOST` / `METRICS_PORT` | Health/Prometheus bind address | `127.0.0.1` / `3001` |
+| `CORS_ORIGIN` | Allowed dashboard origin for metrics CORS | `http://localhost:3002` |
 
 ---
 
@@ -348,13 +401,15 @@ function getEmergencySafe(address _user) external view returns (address);
 function executeEmergencyBatchRevoke(
     address user, 
     address[] calldata tokens, 
-    address[] calldata spenders
-) external onlyGuardian;
+    address[] calldata spenders,
+    uint256 threatScore
+) external onlyAuthorizedGuardian;
 
 function executeEmergencySweep(
     address user, 
-    address[] calldata tokens
-) external onlyGuardian;
+    address[] calldata tokens,
+    uint256 threatScore
+) external onlyAuthorizedGuardian;
 ```
 
 ---
@@ -363,7 +418,7 @@ function executeEmergencySweep(
 
 During the development and testing of PortalSentinel on Portaldot V3 (`pallet-revive`), our team documented several critical technical findings:
 
-1. **IPv6 vs. IPv4 RPC Timeouts:** The public endpoint `https://test-evm-rpc-v3.portaldot.dev` can experience `ENETUNREACH` timeouts under IPv6. Adding `dns.setDefaultResultOrder("ipv4first")` at the daemon entrypoint guarantees reliable sub-100ms RPC communication.
+1. **IPv6 vs. IPv4 RPC Timeouts:** The public endpoint `https://test-evm-rpc-v3.portaldot.dev` is dual-stack, and IPv6 routes can be unreachable. Combining `dns.setDefaultResultOrder("ipv4first")` with Node's `--no-network-family-autoselection` flag prevents Happy Eyeballs from stalling on the dead route; the daemon scripts and container set both.
 2. **Standard ERC-20 Revocation Impossibility:** Traditional guardian contracts fail because third-party smart contracts cannot call `token.approve(spender, 0)` on behalf of a victim. Implementing `executeEmergencySweep` to transfer balances to an invariant cold vault is the only universal defense that protects standard tokens.
 3. **Substrate SS58 vs. EVM H160 Mapping:** The testnet token faucet requires an SS58 address starting with `5`, while MetaMask and Foundry contracts require an H160 address starting with `0x`. Exposing both identities side-by-side in the UI eliminates onboarding friction.
 4. **Autonomous Autopilot Requirement:** Users will not keep a browser tab open 24/7. Connecting the daemon to Telegram via long-polling and instant push dispatch transforms a local tool into a hands-free security guardian.
@@ -376,7 +431,7 @@ A detailed technical comparison document is available at [`docs/COMPARATIVE_ANAL
 
 | Dimension | ApprovalGuardian (Reference Hackathon Project) | PortalSentinel (Our Project) |
 | :--- | :--- | :--- |
-| **Response Latency** | **15 – 45 seconds** (Multi-block DON BFT consensus) | **10 – 15 milliseconds** (Direct mempool streaming + 1.35x gas priority) |
+| **Response Latency** | **15 – 45 seconds** (Multi-block DON BFT consensus) | **Block-scanner detection + 1.35× gas priority** (dispatch latency measured in the demo) |
 | **Standard ERC-20 Tokens** | **Fails silently** (requires non-standard `guardianRevokeApproval`) | **100% Universal** via Dual Defense (Revocation + Emergency Sweep) |
 | **Target Infrastructure** | Ethereum Sepolia, Arbitrum (Standard EVM) | **Portaldot V3 EVM (`pallet-revive` on Substrate RISC-V PolkaVM)** |
 | **User Independence** | Script-tied, relies on Supabase and dashboard polling | **True 24/7 Autopilot**: Cloud daemon runs non-stop; pushes to Telegram |

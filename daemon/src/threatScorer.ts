@@ -1,11 +1,16 @@
 export interface ThreatSignal {
+  /** EOA or contract that initiated the attack (for reporting). */
   sourceAddress: string;
+  /** Contract that actually holds the dangerous allowance and must be revoked. */
+  spenderAddress: string;
   targetVictim: string;
   tokenAddress: string;
   amount: bigint;
   eventName: string;
   txHash: string;
   blockNumber: number;
+  /** True when the signal came from the offline demo harness, not from a block. */
+  simulated?: boolean;
 }
 
 export interface ThreatEvaluation {
@@ -14,6 +19,36 @@ export interface ThreatEvaluation {
   shouldDefend: boolean;
   recommendedAction: "NO_ACTION" | "ALERT_ONLY" | "TRIGGER_EMERGENCY_REVOKE" | "TRIGGER_EMERGENCY_SWEEP";
   reasons: string[];
+}
+
+/** Must match SentinelRegistry.DefenseMode enum order. */
+export const DEFENSE_MODES = ["CONSERVATIVE", "BALANCED", "AGGRESSIVE"] as const;
+export type DefenseModeName = (typeof DEFENSE_MODES)[number];
+
+/** Must match the thresholds documented in the registry and CLI. */
+export const DEFENSE_THRESHOLDS: Record<DefenseModeName, number> = {
+  CONSERVATIVE: 80,
+  BALANCED: 60,
+  AGGRESSIVE: 40,
+};
+
+/**
+ * Detection weights. Kept in one place so the CLI matrix, docs, and tests cannot drift.
+ * These are heuristics for the current block-scanner signal; the P1 scorer replaces
+ * them with velocity/reputation features.
+ */
+export const RULE_WEIGHTS = {
+  attackSignature: 55,
+  outflow: 35,
+  unverifiedSpender: 10,
+} as const;
+
+export function modeName(mode: number): DefenseModeName {
+  return DEFENSE_MODES[mode] ?? "BALANCED";
+}
+
+export function thresholdForMode(mode: number): number {
+  return DEFENSE_THRESHOLDS[modeName(mode)];
 }
 
 export class ThreatScorer {
@@ -29,36 +64,32 @@ export class ThreatScorer {
     let score = 0;
     const reasons: string[] = [];
 
-    // Rule 1: Explicit Malicious Trigger / Attack Signal (+50)
+    // Rule 1: Explicit malicious trigger / attack signal.
     if (signal.eventName === "AttackInitiated" || signal.eventName === "SuspiciousOutflow") {
-      score += 55;
+      score += RULE_WEIGHTS.attackSignature;
       reasons.push("Explicit attack/outflow signature detected from unverified spender");
     }
 
-    // Rule 2: High Velocity or Volume Drain (+30)
+    // Rule 2: Non-zero token outflow.
     if (signal.amount > 0n) {
-      score += 35;
+      score += RULE_WEIGHTS.outflow;
       reasons.push(`High token transfer outflow: ${signal.amount.toString()} base units`);
     }
 
-    // Rule 3: Known Pattern Flag (+10)
-    score += 10;
+    // Rule 3: Spender lacks a verified protocol certification (no allowlist in P0).
+    score += RULE_WEIGHTS.unverifiedSpender;
     reasons.push("Spender lacks verified protocol registry certification");
 
-    // Clamp score to 100 max
+    // Clamp score to 100 max.
     score = Math.min(100, score);
 
-    // Determine severity label
+    // Determine severity label.
     let severity: ThreatEvaluation["severity"] = "LOW";
     if (score >= 80) severity = "CRITICAL";
     else if (score >= 60) severity = "HIGH";
     else if (score >= 40) severity = "MEDIUM";
 
-    // Sensitivity thresholds:
-    // 0 = CONSERVATIVE (threshold >= 80)
-    // 1 = BALANCED (threshold >= 60)
-    // 2 = AGGRESSIVE (threshold >= 40)
-    const threshold = userSensitivity === 0 ? 80 : userSensitivity === 1 ? 60 : 40;
+    const threshold = thresholdForMode(userSensitivity);
     const shouldDefend = score >= threshold;
 
     let recommendedAction: ThreatEvaluation["recommendedAction"] = "NO_ACTION";
@@ -73,7 +104,7 @@ export class ThreatScorer {
       severity,
       shouldDefend,
       recommendedAction,
-      reasons
+      reasons,
     };
   }
 }

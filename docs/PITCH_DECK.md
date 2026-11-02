@@ -1,5 +1,9 @@
 # 📊 PortalSentinel — Pitch Deck Outline
 
+> **Note (production hardening):** this is the original October 2026 hackathon narrative.
+> See [`PRODUCTION_HARDENING_PLAN.md`](./PRODUCTION_HARDENING_PLAN.md) for current
+> capabilities and remaining gaps.
+
 > **Portaldot Hacker House 2026 · Track 3: Node Operations & Tooling**
 
 ---
@@ -23,23 +27,23 @@
 ---
 
 ### Slide 3: Introducing PortalSentinel
-* **Autonomous Circuit Breaker:** Detects, scores, and preempts exploit transactions in under **15 milliseconds**.
-* **Mempool Front-Running:** Uses a $1.35\times$ priority gas fee multiplier on Portaldot V3 EVM to mine defense transactions *before* the attacker's drain is finalized.
+* **Autonomous Circuit Breaker:** Detects a configured drain signal, scores it, and dispatches an on-chain defense. Detection is currently block-poll based; dispatch latency is measured and reported, not guaranteed.
+* **Priority Fee Escalation:** Uses a $1.35\times$ to $1.85\times$ priority fee multiplier on Portaldot V3 EVM to improve inclusion odds. Ordering ahead of the attacker is not guaranteed.
 * **Dual-Defense Architecture:**
-  1. *Atomic Batch Revocation:* Sets allowances to zero.
-  2. *Emergency Capital Sweep:* Sweeps funds to the user's pre-configured cold vault, completely solving the ERC-20 limitation.
+  1. *Atomic Batch Revocation:* Sets allowances to zero and verifies the result.
+  2. *Emergency Capital Sweep:* Sweeps remaining funds to the user's pre-configured cold vault, addressing the ERC-20 third-party revocation limit.
 
 ---
 
 ### Slide 4: Zero-Custody Smart Contract Invariant
 * **Non-Custodial Architecture:** The Sentinel Guardian key can NEVER divert or withdraw funds to itself.
 * **Contract Guarantee:** Funds can strictly and only be transferred to the user’s pre-registered `emergencySafe`.
-* **Audited Logic:** 100% Foundry test pass rate across all attack vectors.
+* **Audited Logic:** 12/12 Foundry tests passing, including a fuzz sweep invariant. These are internal tests, not an external audit.
 
 ---
 
 ### Slide 5: Why Portaldot V3 (`pallet-revive`) is Essential
-* **Sub-Second Block Times:** Portaldot V3's ~1000ms block production enables real-time mempool preemption that is physically impossible on 12-second EVM networks.
+* **Sub-Second Block Times:** Portaldot V3's ~1000ms block production shortens the detect-to-dispatch window compared with 12-second EVM networks. Actual preemption still depends on block timing, RPC behavior, and gas priority.
 * **PolkaVM Efficiency:** RISC-V execution provides the low bytecode interpretation latency needed for high-frequency defense.
 * **Unified Gas Token (`POT`):** Zero gas friction with native POT priority fee escalation.
 

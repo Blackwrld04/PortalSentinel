@@ -7,11 +7,12 @@
     "sentinel": "src/cli.ts"
   },
   "scripts": {
-    "start": "NODE_OPTIONS=\"--dns-result-order=ipv4first\" tsx src/index.ts",
-    "simulate": "NODE_OPTIONS=\"--dns-result-order=ipv4first\" tsx src/simulateAttack.ts",
-    "cli": "NODE_OPTIONS=\"--dns-result-order=ipv4first\" tsx src/cli.ts",
+    "start": "NODE_OPTIONS=\"--dns-result-order=ipv4first --no-network-family-autoselection\" tsx src/index.ts",
+    "simulate": "NODE_OPTIONS=\"--dns-result-order=ipv4first --no-network-family-autoselection\" tsx src/simulateAttack.ts",
+    "cli": "NODE_OPTIONS=\"--dns-result-order=ipv4first --no-network-family-autoselection\" tsx src/cli.ts",
     "build": "tsc",
-    "telegram:bot": "NODE_OPTIONS=\"--dns-result-order=ipv4first\" tsx src/telegramBot.ts"
+    "test": "node --import tsx --test src/*.test.ts",
+    "telegram:bot": "NODE_OPTIONS=\"--dns-result-order=ipv4first --no-network-family-autoselection\" tsx src/telegramBot.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

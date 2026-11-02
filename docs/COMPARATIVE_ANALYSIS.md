@@ -1,5 +1,10 @@
 # Comprehensive Comparative Analysis: PortalSentinel vs. ApprovalGuardian
 
+> **Note (production hardening):** this is the original October 2026 hackathon narrative.
+> See [`PRODUCTION_HARDENING_PLAN.md`](./PRODUCTION_HARDENING_PLAN.md) for current
+> capabilities and remaining gaps. Latency, mempool, and front-running figures below are
+> design targets from that narrative, not measurements of the P0 build.
+
 This technical analysis provides an in-depth architectural and operational comparison between **PortalSentinel** (built for Portaldot V3 EVM & Substrate, Track 3 Node Operations & Tooling) and the reference project **ApprovalGuardian** (built for the Chainlink Convergence Hackathon).
 
 ---
