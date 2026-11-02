@@ -8,3 +8,4 @@ dist/
 *.log
 broadcast/
 .vite/
+.sentinel-state.json

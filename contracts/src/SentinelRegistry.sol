@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title SentinelRegistry
@@ -9,7 +10,7 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
  *         Stores user protection preferences, emergency fallback safe addresses,
  *         and authorized Guardian automated agents.
  */
-contract SentinelRegistry is Ownable {
+contract SentinelRegistry is Ownable, Pausable {
 
     // ─── Enums & Structs ────────────────────────────────────────────────────────
     enum DefenseMode {
@@ -80,7 +81,7 @@ contract SentinelRegistry is Ownable {
      * @param _mode Sensitivity mode (0 = CONSERVATIVE, 1 = BALANCED, 2 = AGGRESSIVE).
      * @param _emergencySafe Cold wallet address (e.g. cold EVM or mapped Substrate account).
      */
-    function registerShield(DefenseMode _mode, address _emergencySafe) external {
+    function registerShield(DefenseMode _mode, address _emergencySafe) external whenNotPaused {
         require(_emergencySafe != address(0), "SentinelRegistry: Invalid emergency safe address");
         require(_emergencySafe != msg.sender, "SentinelRegistry: Emergency safe should be distinct backup address");
 
@@ -104,7 +105,7 @@ contract SentinelRegistry is Ownable {
     /**
      * @notice Update emergency fallback safe address.
      */
-    function updateEmergencySafe(address _newSafe) external {
+    function updateEmergencySafe(address _newSafe) external whenNotPaused {
         require(policies[msg.sender].isActive, "SentinelRegistry: Shield not active");
         require(_newSafe != address(0), "SentinelRegistry: Invalid emergency safe address");
         policies[msg.sender].emergencySafe = _newSafe;
@@ -114,7 +115,7 @@ contract SentinelRegistry is Ownable {
     /**
      * @notice Update sensitivity defense mode.
      */
-    function updateDefenseMode(DefenseMode _newMode) external {
+    function updateDefenseMode(DefenseMode _newMode) external whenNotPaused {
         require(policies[msg.sender].isActive, "SentinelRegistry: Shield not active");
         policies[msg.sender].mode = _newMode;
         emit ShieldUpdated(msg.sender, _newMode, policies[msg.sender].emergencySafe);
@@ -123,7 +124,7 @@ contract SentinelRegistry is Ownable {
     /**
      * @notice Deactivate Sentinel Shield.
      */
-    function deactivateShield() external {
+    function deactivateShield() external whenNotPaused {
         require(policies[msg.sender].isActive, "SentinelRegistry: Shield not active");
         policies[msg.sender].isActive = false;
         totalProtectedUsers--;
@@ -144,7 +145,7 @@ contract SentinelRegistry is Ownable {
     /**
      * @notice Log a defense action timestamp for a protected user.
      */
-    function recordDefenseAction(address _user, string calldata _actionType) external onlyGuardianOrExecutor {
+    function recordDefenseAction(address _user, string calldata _actionType) external onlyGuardianOrExecutor whenNotPaused {
         require(policies[_user].isActive, "SentinelRegistry: User not protected");
         policies[_user].lastDefenseActionTimestamp = block.timestamp;
         totalDefenseActions++;
@@ -166,6 +167,21 @@ contract SentinelRegistry is Ownable {
         require(_guardian != address(0), "SentinelRegistry: Invalid guardian address");
         authorizedGuardians[_guardian] = _status;
         emit GuardianAuthorized(_guardian, _status);
+    }
+
+    /**
+     * @notice Stop all user enrollment changes and autonomous defense actions.
+     * @dev Only the owner can pause. Threat flagging remains available during a pause.
+     */
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @notice Resume normal operation.
+     */
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     // ─── View Helpers ───────────────────────────────────────────────────────────

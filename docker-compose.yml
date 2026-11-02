@@ -1,30 +1,62 @@
-version: "3.8"
-
 services:
   portal-sentinel:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runner
     container_name: portal-sentinel-daemon
     restart: unless-stopped
     environment:
-      - PORTALDOT_RPC_URL=https://test-evm-rpc-v3.portaldot.dev
-      - PORTALDOT_CHAIN_ID=420420777
-      - SENTINEL_REGISTRY_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
-      - DEFENSE_EXECUTOR_ADDRESS=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-      - GUARDIAN_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+      - PORTALDOT_RPC_URL=${PORTALDOT_RPC_URL:-https://test-evm-rpc-v3.portaldot.dev}
+      - PORTALDOT_CHAIN_ID=${PORTALDOT_CHAIN_ID:-420420777}
+      - SENTINEL_REGISTRY_ADDRESS=${SENTINEL_REGISTRY_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
+      - DEFENSE_EXECUTOR_ADDRESS=${DEFENSE_EXECUTOR_ADDRESS:-0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512}
+      - MOCK_TOKEN_ADDRESS=${MOCK_TOKEN_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}
+      - MOCK_EXPLOIT_ADDRESS=${MOCK_EXPLOIT_ADDRESS:-0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9}
+      # Never bake a key into the compose file. Provide it via .env or the shell.
+      - GUARDIAN_PRIVATE_KEY=${GUARDIAN_PRIVATE_KEY:-}
+      # Safe default: start in dry-run until the operator explicitly opts in.
+      - DRY_RUN=${DRY_RUN:-true}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
-      - TELEGRAM_ALERTS_ENABLED=true
+      - TELEGRAM_ALERTS_ENABLED=${TELEGRAM_ALERTS_ENABLED:-true}
+      - METRICS_HOST=0.0.0.0
+      - METRICS_PORT=3001
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3002}
     ports:
-      - "3002:3000"
+      - "3001:3001"
+    volumes:
+      # Persist the last processed block across container restarts.
+      - sentinel-data:/data
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
     healthcheck:
-      test: ["CMD", "node", "daemon/dist/cli.js", "health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
+      start_period: 10s
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    container_name: portal-sentinel-dashboard
+    restart: unless-stopped
+    ports:
+      - "3002:80"
+    depends_on:
+      portal-sentinel:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  sentinel-data:

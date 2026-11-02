@@ -31,7 +31,7 @@ This document contains verifiable on-chain proofs, contract artifacts, and repro
 
 ## 3. Local Test Suite Verification (Foundry)
 
-Run the full automated test suite containing 6 security and invariant tests:
+Run the full automated test suite containing 12 security and invariant tests:
 
 ```bash
 cd contracts
@@ -40,15 +40,23 @@ forge test -v
 
 ### Test Results:
 ```text
-Ran 6 tests for test/PortalSentinel.t.sol:PortalSentinelTest
-[PASS] test_BatchRevokeStopsDrainer() (gas: 349294)
-[PASS] test_EmergencySweepMovesFundsStrictlyToColdSafe() (gas: 376105)
-[PASS] test_NonGuardianCannotTriggerDefense() (gas: 159982)
-[PASS] test_RegisterAndActivateShield() (gas: 141499)
-[PASS] test_SimulateDefenseDirectForSandbox() (gas: 224956)
-[PASS] test_ValidationRulesForEmergencySafe() (gas: 58088)
-Suite result: ok. 6 passed; 0 failed; 0 skipped
+Ran 12 tests for test/PortalSentinel.t.sol:PortalSentinelTest
+[PASS] testFuzz_SweepNeverExceedsAllowanceOrBalance(uint96,uint96) (runs: 256)
+[PASS] test_BatchRevokeRevertsOnEmptyBatch()
+[PASS] test_BatchRevokeRevertsWhenTokenLacksGuardianHook()
+[PASS] test_BatchRevokeStopsDrainer()
+[PASS] test_EmergencySweepMovesFundsStrictlyToColdSafe()
+[PASS] test_EmergencySweepRevertsWithoutApproval()
+[PASS] test_GuardianCannotSweepToItself()
+[PASS] test_NonGuardianCannotTriggerDefense()
+[PASS] test_PausedRegistryBlocksDefenseAndEnrollment()
+[PASS] test_RegisterAndActivateShield()
+[PASS] test_SweepAccountingCountsOnlyMovedTokens()
+[PASS] test_ValidationRulesForEmergencySafe()
+Suite result: ok. 12 passed; 0 failed; 0 skipped
 ```
+
+These are internal tests, not an external audit.
 
 ---
 
@@ -73,37 +81,45 @@ curl -s -X POST https://test-evm-rpc-v3.portaldot.dev \
 
 ---
 
-## 5. Live Simulation Harness
+## 5. Synthetic Simulation Harness
 
-Execute the automated end-to-end threat detection and evaluation test:
+Reads the live block height from Portaldot V3, then evaluates a **synthetic** threat
+signal locally. It does not sign or broadcast a transaction:
 
 ```bash
 cd daemon
-npm run simulate
+TELEGRAM_ALERTS_ENABLED=false npm run simulate
 ```
 
 ### Verified Output:
 ```text
-[1/4] Connected to Portaldot Testnet. Current Block: #257077
-[2/4] Initialized Test Scenario:
-      Victim Wallet:    0x6198fA0eC3d9E345bB5A429bC283F8C564619C74
-      Hacker Address:   0xC965f54D0f312cb6E7947171d9a2636e7a2b9F49
-      Cold Safe Target: 0x9378C531475Ffe51368f5a6e8790089eC8d9a27A
+[1/5] Connected to Portaldot Testnet. Current Block: #295468   (height varies)
+[2/5] Initialized Test Scenario:
+      Victim Wallet:    0xB5774e9a6D233d0B0F859C237E204EE3A36C0E9C
+      Hacker Address:   0x1eAB5D3B166Fc1F3721ab8804cE7B160930B1e77
+      Cold Safe Target: 0x48D688128Ab80DF55955a44b08cd55987FF3444c
 
-[3/4] Simulating Inbound Threat Signal:
-      ⚡ Event: AttackInitiated
-      💰 Draining Target: 5,000 pUSD
+[3/5] Simulating Inbound Threat Signal:
+      [EXEC] Event: AttackInitiated
+      [ASSET] Draining Target: 5,000 pUSD
+      [NOTE] Synthetic signal — no transaction was broadcast.
 
-[4/4] Sentinel Threat Evaluation:
+[4/5] Sentinel Threat Evaluation:
       Score:       100/100 [CRITICAL]
-      Decision:    🚨 AUTO-DEFENSE TRIGGERED
+      Decision:    [ALERT] AUTO-DEFENSE WOULD TRIGGER
       Action:      TRIGGER_EMERGENCY_SWEEP
       Reasons:
         - Explicit attack/outflow signature detected from unverified spender
         - High token transfer outflow: 5000000000000000000000 base units
         - Spender lacks verified protocol registry certification
 
-   ✅ Simulation Complete! Logic & Scoring Verified.
+[5/5] Sending Telegram Advisories (if configured)...
+[TELEGRAM] Alerts are disabled in config.
+
+==================================================================
+   [OK] Simulation complete. No on-chain transaction was broadcast.
+   Telegram advisories: not sent (disabled or failed)
+==================================================================
 ```
 
 ---

@@ -7,7 +7,10 @@ if (dns.setDefaultResultOrder) {
 
 import { ethers } from "ethers";
 import { CONFIG } from "./config.js";
-import { ThreatScorer } from "./threatScorer.js";
+import {
+  DEFENSE_THRESHOLDS,
+  RULE_WEIGHTS,
+} from "./threatScorer.js";
 import { telegramNotifier } from "./telegramNotifier.js";
 
 const STATIC_NETWORK = new ethers.Network(CONFIG.network.name, CONFIG.network.chainId);
@@ -115,20 +118,20 @@ async function cmdAudit(targetAddress: string) {
       const registry = new ethers.Contract(
         CONFIG.contracts.registry,
         [
-          "function isShieldActive(address) view returns (bool)",
-          "function getUserPolicy(address) view returns (tuple(uint8 mode, address emergencySafe, bool autoRevokeEnabled, bool autoSweepEnabled, uint256 maxOutflowPerHour, uint256 registeredAt, bool active))",
+          "function isProtected(address) view returns (bool)",
+          "function getUserPolicy(address) view returns (tuple(bool isActive, uint8 mode, address emergencySafe, uint256 registeredTimestamp, uint256 lastDefenseActionTimestamp))",
         ],
         provider
       );
-      const isActive = await registry.isShieldActive(targetAddress);
+      const isActive = await registry.isProtected(targetAddress);
       console.log(`[SENTINEL]  Sentinel Protection: ${isActive ? "[SAFE] ACTIVE (Circuit breaker armed)" : "[CRITICAL] INACTIVE"}`);
       if (isActive) {
         const policy = await registry.getUserPolicy(targetAddress);
         const modes = ["CONSERVATIVE", "BALANCED", "AGGRESSIVE"];
-        console.log(`   - Policy Mode:   ${modes[policy.mode] || "BALANCED"}`);
+        console.log(`   - Policy Mode:   ${modes[Number(policy.mode)] || "BALANCED"}`);
         console.log(`   - Cold Safe:     ${policy.emergencySafe}`);
-        console.log(`   - Auto-Revoke:   ${policy.autoRevokeEnabled}`);
-        console.log(`   - Auto-Sweep:    ${policy.autoSweepEnabled}`);
+        console.log(`   - Registered At: ${new Date(Number(policy.registeredTimestamp) * 1000).toISOString()}`);
+        console.log(`   - Last Defense:  ${policy.lastDefenseActionTimestamp > 0n ? new Date(Number(policy.lastDefenseActionTimestamp) * 1000).toISOString() : "never"}`);
       }
     } catch {
       // Registry query optional
@@ -146,21 +149,21 @@ async function cmdThreatMatrix() {
   console.log("   [ANOMALY] PORTALSENTINEL AUTONOMOUS THREAT SCORING MATRIX            ");
   console.log("==================================================================");
   console.log("Rule 1: Direct Attack & Drain Call Detection");
-  console.log("   Weight: +100 Points");
-  console.log("   Trigger: Function signature matching malicious drain (e.g., executeDrain)");
+  console.log(`   Weight: +${RULE_WEIGHTS.attackSignature} Points`);
+  console.log("   Trigger: AttackInitiated / SuspiciousOutflow signature from an unverified spender");
   console.log("");
-  console.log("Rule 2: Outflow Volume Velocity (Per Block)");
-  console.log("   Weight: +30 to +60 Points");
-  console.log("   Trigger: Outflow exceeding 50% or high single-tx volume limit");
+  console.log("Rule 2: Non-Zero Outflow");
+  console.log(`   Weight: +${RULE_WEIGHTS.outflow} Points`);
+  console.log("   Trigger: Any non-zero token amount in the observed signal");
   console.log("");
   console.log("Rule 3: Uncertified Spender Contract Status");
-  console.log("   Weight: +25 Points");
-  console.log("   Trigger: Spender not in Portaldot Verified Protocol Directory");
+  console.log(`   Weight: +${RULE_WEIGHTS.unverifiedSpender} Points`);
+  console.log("   Trigger: Spender not in the verified protocol directory (P1 allowlist)");
   console.log("");
   console.log("Decision Matrix by Sensitivity Mode:");
-  console.log("   [SENTINEL]  CONSERVATIVE: Defend threshold >= 40 points");
-  console.log("   [ALLOWANCE]  BALANCED:     Defend threshold >= 65 points");
-  console.log("   [EXEC] AGGRESSIVE:   Defend threshold >= 80 points");
+  console.log(`   [SENTINEL]  CONSERVATIVE: Defend threshold >= ${DEFENSE_THRESHOLDS.CONSERVATIVE} points`);
+  console.log(`   [ALLOWANCE]  BALANCED:     Defend threshold >= ${DEFENSE_THRESHOLDS.BALANCED} points`);
+  console.log(`   [EXEC] AGGRESSIVE:   Defend threshold >= ${DEFENSE_THRESHOLDS.AGGRESSIVE} points`);
   console.log("==================================================================");
 }
 
@@ -169,21 +172,23 @@ async function cmdMetrics() {
   console.log("   [METRICS] PORTALSENTINEL PROMETHEUS & HEALTH OBSERVABILITY     ");
   console.log("==================================================================");
   try {
-    const res = await fetch("http://localhost:3001/health");
+    const res = await fetch(`http://localhost:${CONFIG.metrics.port}/health`);
     const data = await res.json();
     console.log(`[STATUS] Daemon Health:     ${data.status}`);
     console.log(`[NET]    Network:           ${data.network} (Chain ID: ${data.chainId})`);
     console.log(`[BLOCK]  Monitored Block:   #${data.metrics.blockHeight}`);
     console.log(`[RPC]    Roundtrip Latency: ${data.metrics.rpcLatencyMs} ms`);
+    console.log(`[MODE]   Execution Mode:    ${data.dryRun ? "DRY RUN (no broadcasts)" : "LIVE"}`);
     console.log(`[ALERT]  Threats Detected:  ${data.metrics.threatsDetected}`);
     console.log(`[DEFENSE]Defenses Executed: ${data.metrics.defensesExecuted}`);
-    console.log(`[PREEMPT]Last Action Time:  ${data.metrics.lastDefenseLatencyMs} ms`);
+    console.log(`[SIM]    Defenses Simulated:${data.metrics.defensesSimulated ?? 0}`);
+    console.log(`[LATENCY]Last Defense:      ${data.metrics.lastDefenseLatencyMs} ms`);
     console.log(`[TELE]   Telegram Alerts:   ${data.metrics.alertsSent}`);
     console.log(`[UPTIME] Daemon Uptime:     ${data.metrics.uptimeSeconds}s`);
     console.log("------------------------------------------------------------------");
-    console.log("Prometheus endpoint available at: http://localhost:3001/metrics");
+    console.log(`Prometheus endpoint available at: http://localhost:${CONFIG.metrics.port}/metrics`);
   } catch {
-    console.log("[INFO] Daemon is not currently running on port 3001.");
+    console.log(`[INFO] Daemon is not currently running on port ${CONFIG.metrics.port}.`);
     console.log("Run 'npm run daemon' to start the live monitoring engine & metrics server.");
   }
   console.log("==================================================================");

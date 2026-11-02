@@ -89,7 +89,7 @@ export class TelegramBotService {
           [
             `<b>[PORTALSENTINEL 24/7 DEFENSE BOT]</b>`,
             ``,
-            `Welcome @${fromUser}! PortalSentinel is the autonomous mempool firewall for <b>Portaldot V3 EVM</b>.`,
+            `Welcome @${fromUser}! PortalSentinel is the autonomous block-level firewall for <b>Portaldot V3 EVM</b>.`,
             ``,
             `<b>Your Telegram Chat ID:</b> <code>${chatId}</code>`,
             ``,
@@ -98,7 +98,7 @@ export class TelegramBotService {
             `2. Paste it into the PortalSentinel Dashboard at http://localhost:3002/#telegram`,
             `3. Click <b>SAVE TELEGRAM CONFIG</b>.`,
             ``,
-            `Once linked, you never have to keep the website open! If any attacker targets your approvals, PortalSentinel will front-run them in under 15ms and buzz your phone instantly.`,
+            `Once linked, you never have to keep the website open! If any attacker targets your approvals, PortalSentinel will dispatch a defense and buzz your phone with the outcome.`,
             ``,
             `<b>Available Commands:</b>`,
             `• /status — Check Portaldot V3 EVM health & block height`,
@@ -124,7 +124,7 @@ export class TelegramBotService {
               `• <b>Latest Block:</b> #${block}`,
               `• <b>Gas Price:</b> ${fee.gasPrice ? ethers.formatUnits(fee.gasPrice, "gwei") : "0"} Gwei`,
               `• <b>Circuit Breaker Engine:</b> pallet-revive PolkaVM`,
-              `• <b>Guardian Status:</b> ARMED & MONITORING MEMPOOL`,
+              `• <b>Guardian Status:</b> ARMED & SCANNING BLOCKS`,
               ``,
               `<a href="${CONFIG.network.nodeExplorerUrl}">View Node Console Explorer</a>`
             ].join("\n")
@@ -134,25 +134,48 @@ export class TelegramBotService {
         }
         break;
 
-      case "/audit":
+      case "/audit": {
         const target = args[0];
         if (!target || !ethers.isAddress(target)) {
           await this.sendMessage(chatId, `Usage: /audit &lt;0xAddress&gt;`);
           return;
         }
-        await this.sendMessage(
-          chatId,
-          [
-            `<b>[SENTINEL AUDIT REPORT]</b>`,
-            `Target: <code>${target}</code>`,
-            `Network: Portaldot V3 EVM`,
-            ``,
-            `• Risk Score: <b>0/100 [SAFE]</b>`,
-            `• Active Allowances: 0 malicious spenders detected`,
-            `• Shield Enrollment: Active protection available on-chain`
-          ].join("\n")
-        );
+
+        try {
+          const provider = getProvider();
+          const registry = new ethers.Contract(
+            CONFIG.contracts.registry,
+            ["function isProtected(address) view returns (bool)"],
+            provider
+          );
+          const [balance, code, isProtected] = await Promise.all([
+            provider.getBalance(target),
+            provider.getCode(target),
+            registry.isProtected(target).catch(() => false),
+          ]);
+
+          await this.sendMessage(
+            chatId,
+            [
+              `<b>[SENTINEL AUDIT REPORT]</b>`,
+              `Target: <code>${target}</code>`,
+              `Network: Portaldot V3 EVM`,
+              ``,
+              `• Native Balance: <b>${ethers.formatEther(balance)} tPOT</b>`,
+              `• Account Type: ${code === "0x" ? "EOA" : "Contract"}`,
+              `• Shield Enrollment: ${isProtected ? "<b>ACTIVE</b>" : "<b>INACTIVE</b>"}`,
+              ``,
+              `<i>Allowance-level audit is available via the CLI: npm run cli audit ${target}</i>`,
+            ].join("\n")
+          );
+        } catch (err: any) {
+          await this.sendMessage(
+            chatId,
+            `[ERROR] Audit failed: ${err.message || err}`
+          );
+        }
         break;
+      }
 
       case "/help":
       default:

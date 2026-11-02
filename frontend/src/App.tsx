@@ -96,48 +96,29 @@ export default function App() {
     lastDefenseLatencyMs: number;
     alertsSent: number;
     uptimeSeconds: number;
+    dryRun: boolean;
   } | null>(null);
 
-  const [blockHeight, setBlockHeight] = useState(257948);
+  const [blockHeight, setBlockHeight] = useState(0);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simStep, setSimStep] = useState<number>(0);
-  const [lastTxHash, setLastTxHash] = useState<string>("");
 
-  // Telegram 24/7 Mobile Alert State
-  const [telegramHandle, setTelegramHandle] = useState("@Blackwrld04");
-  const [telegramChatId, setTelegramChatId] = useState("6755373105");
-  const [telegramSaved, setTelegramSaved] = useState(true);
-  const TELEGRAM_BOT_TOKEN = "9138469919:AAHPtIu6kBqusj29nf9-6UQ-4yy82q-5iSQ";
-
-  const dispatchLiveTelegram = async (text: string) => {
-    if (!telegramChatId) return;
-    try {
-      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: telegramChatId,
-          text,
-          parse_mode: "HTML",
-          disable_web_page_preview: true
-        })
-      });
-    } catch (e) {
-      console.warn("Direct Telegram dispatch:", e);
-    }
-  };
+  // Telegram alert settings are stored in the daemon, not sent by the browser.
+  // A bot token must never be shipped to a client bundle.
+  const [telegramHandle, setTelegramHandle] = useState("");
+  const [telegramChatId, setTelegramChatId] = useState("");
+  const [telegramSaved, setTelegramSaved] = useState(false);
+  const [testAlertRequested, setTestAlertRequested] = useState(false);
   const [telegramNotifyDrain, setTelegramNotifyDrain] = useState(true);
   const [telegramNotifySuspicious, setTelegramNotifySuspicious] = useState(true);
   const [telegramNotifyDaily, setTelegramNotifyDaily] = useState(false);
-  const [testAlertSent, setTestAlertSent] = useState(false);
-  const [telegramAlertPulse, setTelegramAlertPulse] = useState(false);
 
   const [logs, setLogs] = useState<string[]>([
-    "[08:30:10] [SYSTEM] PortalSentinel node initialized on Portaldot V3 EVM (Chain ID: 420420777)",
-    "[08:30:12] [MONITOR] Listening to pallet-revive RPC at https://test-evm-rpc-v3.portaldot.dev",
-    "[08:30:15] [REGISTRY] Active user policies loaded. Total protected vaults: 1,429",
-    "[08:30:18] [TELEMETRY] Scanning mempool for anomalous transferFrom calls & zero-day drains...",
-    "[08:30:22] [HEURISTIC] Threat scoring matrix armed: Rule 1 (+100), Rule 2 (+60), Rule 3 (+25)"
+    "[SYSTEM] Dashboard initialized in preview mode.",
+    "[MONITOR] Daemon health is read from http://localhost:3001/health when available.",
+    "[REGISTRY] No on-chain policies loaded yet. Connect a wallet to scan allowances.",
+    "[SCANNER] Block scanning runs in the daemon, not in this browser tab.",
+    "[HEURISTIC] Threat scoring runs in the daemon; this view displays its reported metrics."
   ]);
 
   const [approvals, setApprovals] = useState<ApprovalItem[]>([
@@ -170,13 +151,8 @@ export default function App() {
     }
   ]);
 
-  // Live block ticker
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setBlockHeight((prev) => prev + 1);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, []);
+  // Block height comes from the daemon's /health endpoint. There is deliberately
+  // no local ticker: advancing a fake height would misrepresent chain progress.
 
   const fetchBalance = async (provider: any, address: string) => {
     try {
@@ -367,23 +343,26 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
           const data = await res.json();
           setDaemonMetrics({
             status: data.status,
-            blockHeight: data.metrics.blockHeight || blockHeight,
-            rpcLatencyMs: data.metrics.rpcLatencyMs || 38,
-            threatsDetected: data.metrics.threatsDetected || 0,
-            defensesExecuted: data.metrics.defensesExecuted || 0,
-            lastDefenseLatencyMs: data.metrics.lastDefenseLatencyMs || 14,
-            alertsSent: data.metrics.alertsSent || 0,
-            uptimeSeconds: data.metrics.uptimeSeconds || 0,
+            blockHeight: data.metrics.blockHeight ?? 0,
+            // Use nullish fallbacks so a real zero is shown as zero, not a fake latency.
+            rpcLatencyMs: data.metrics.rpcLatencyMs ?? 0,
+            threatsDetected: data.metrics.threatsDetected ?? 0,
+            defensesExecuted: data.metrics.defensesExecuted ?? 0,
+            lastDefenseLatencyMs: data.metrics.lastDefenseLatencyMs ?? 0,
+            alertsSent: data.metrics.alertsSent ?? 0,
+            uptimeSeconds: data.metrics.uptimeSeconds ?? 0,
+            dryRun: Boolean(data.dryRun ?? data.metrics.dryRun),
           });
         }
       } catch {
-        // Fallback when daemon endpoint is offline
+        // The daemon is unreachable: do not keep presenting stale "online" data.
+        setDaemonMetrics(null);
       }
     };
     fetchDaemonMetrics();
     const interval = setInterval(fetchDaemonMetrics, 4000);
     return () => clearInterval(interval);
-  }, [blockHeight]);
+  }, []);
 
   // Live On-Chain Approvals Scanner
   const handleScanApprovals = async () => {
@@ -497,17 +476,9 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
         )
       );
 
-      // Send Telegram notification
-      dispatchLiveTelegram(
-        `<b>[MANUAL REVOKE CONFIRMED ON-CHAIN]</b>\n\n` +
-        `<b>Wallet:</b> <code>${userAddress}</code>\n` +
-        `<b>Spender:</b> <code>${item.spender}</code> (${item.spenderName})\n` +
-        `<b>Asset:</b> ${item.tokenSymbol}\n` +
-        `<b>Allowance:</b> Set to 0 (SAFE)\n` +
-        `<b>Block:</b> #${receipt?.blockNumber}\n` +
-        `<b>Tx:</b> <code>${tx.hash}</code>\n\n` +
-        `<a href="https://node-console.portaldot.dev/">View on Portaldot Node Console</a>`
-      );
+      // Telegram delivery is owned by the daemon. The browser never holds a bot
+      // token, so there is nothing to send from here.
+      addLog(`[TELEGRAM] Manual revoke confirmed. Configure TELEGRAM_CHAT_ID in the daemon to receive this alert.`);
 
       try {
         confetti({ particleCount: 60, spread: 65, origin: { y: 0.6 } });
@@ -578,17 +549,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
   const handleSavePolicyStudio = async () => {
     setPolicySavedToast(true);
     addLog(`[POLICY STUDIO] Policy Saved: Mode=${defenseMode}, Safe=${emergencySafe}, AutoRevoke=${autoRevokeEnabled}, AutoSweep=${autoSweepEnabled}, MaxOutflow=${maxOutflowHourly} pUSD`);
-
-    dispatchLiveTelegram(
-      `<b>[SENTINEL SECURITY POLICY UPDATED]</b>\n\n` +
-      `<b>Protected Wallet:</b> <code>${userAddress}</code>\n` +
-      `<b>Sensitivity Mode:</b> ${defenseMode}\n` +
-      `<b>Emergency Cold Safe:</b> <code>${emergencySafe}</code>\n` +
-      `<b>Auto-Revoke:</b> ${autoRevokeEnabled ? "ENABLED" : "DISABLED"}\n` +
-      `<b>Auto-Sweep:</b> ${autoSweepEnabled ? "ENABLED" : "DISABLED"}\n` +
-      `<b>Max Hourly Outflow:</b> ${maxOutflowHourly} pUSD\n\n` +
-      `<i>Circuit breaker rules synchronized with Portaldot V3 SentinelRegistry.</i>`
-    );
+    addLog(`[TELEGRAM] Policy changes are not sent from the browser; configure alerts in the daemon environment.`);
 
     if (walletConnected) {
       await handleArmVaultOnChain();
@@ -599,29 +560,19 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
 
   const handleSaveTelegram = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!telegramChatId.trim()) {
+      addLog("[TELEGRAM] Enter a chat ID before saving.");
+      return;
+    }
     setTelegramSaved(true);
-    addLog(`[TELEGRAM] Configuration saved: Alert target bound to ${telegramHandle} (Chat ID: ${telegramChatId})`);
+    addLog(`[TELEGRAM] Preview settings saved for ${telegramHandle || "this browser"}. The daemon reads TELEGRAM_CHAT_ID from its environment; the dashboard never receives the bot token.`);
     setTimeout(() => setTelegramSaved(false), 3000);
   };
 
   const handleSendTestTelegram = () => {
-    setTestAlertSent(true);
-    setTelegramAlertPulse(true);
-    addLog(`[TELEGRAM BOT] Dispatched test security ping to ${telegramHandle} (${telegramChatId}). Push delivery verified!`);
-
-    dispatchLiveTelegram(
-      `<b>[PORTALSENTINEL BOT — TEST SECURITY PING]</b>\n\n` +
-      `<b>Status:</b> ACTIVE & ARMED\n` +
-      `<b>Bound Target:</b> ${telegramHandle} (ID: <code>${telegramChatId}</code>)\n` +
-      `<b>Monitored Address:</b> <code>${userAddress}</code>\n` +
-      `<b>Network:</b> Portaldot V3 EVM (Chain ID: 420420777)\n\n` +
-      `<i>Your Telegram is linked to PortalSentinel. You will receive instant alerts whenever suspicious approvals or drain calls are detected.</i>`
-    );
-
-    setTimeout(() => {
-      setTestAlertSent(false);
-      setTelegramAlertPulse(false);
-    }, 4500);
+    setTestAlertRequested(true);
+    addLog("[TELEGRAM] This dashboard cannot send Telegram messages. On the daemon host, run `npm run cli telegram:test <chat-id>` with TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID set.");
+    setTimeout(() => setTestAlertRequested(false), 4500);
   };
 
   const addLog = (msg: string) => {
@@ -633,7 +584,8 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
     if (isSimulating) return;
     setIsSimulating(true);
     setSimStep(1);
-    setLastTxHash("");
+
+    addLog("[SIMULATION] Local walkthrough only — no transaction is broadcast.");
 
     addLog("[ALERT] Exploit transaction detected! Router 0xCf7Ed... attempting 5,000 pUSD drain.");
 
@@ -645,43 +597,28 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
     // Step 3: Priority Gas Escalation (1.35x)
     await new Promise((r) => setTimeout(r, 1200));
     setSimStep(3);
-    addLog("[DISPATCHER] Escalating gas price by 1.35x (0.0000354 Gwei). Broadcasting emergency front-run.");
+    addLog("[DISPATCHER] Would escalate gas price by 1.35x and broadcast an emergency defense.");
 
     // Step 4: Defense Execution
     await new Promise((r) => setTimeout(r, 1300));
     setSimStep(4);
-    addLog("[EXECUTION] DefenseExecutor.executeEmergencyBatchRevoke mined in block #" + (blockHeight + 1));
+    addLog("[EXECUTION] DefenseExecutor.executeEmergencyBatchRevoke would be sent (simulated).");
 
-    // Step 5: Capital Rescued
+    // Step 5: Preview complete
     await new Promise((r) => setTimeout(r, 1100));
     setSimStep(5);
-    const mockHash = "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
-    setLastTxHash(mockHash);
 
     // Update compromised approval status to safe
     setApprovals((prev) =>
       prev.map((item) =>
         item.status === "CRITICAL"
-          ? { ...item, allowance: "0 pUSD", riskScore: 0, status: "SAFE", spenderName: "Compromised Router [REVOKED & DISARMED]" }
+          ? { ...item, allowance: "0 pUSD", riskScore: 0, status: "SAFE", spenderName: "Compromised Router [PREVIEW: WOULD BE REVOKED]" }
           : item
       )
     );
 
-    addLog("[SUCCESS] Capital preserved! Attacker front-ran. Allowance zeroed before drain finalized.");
-    setTelegramAlertPulse(true);
-    addLog(`[TELEGRAM BOT] Dispatched instant exploit alert to ${telegramHandle}: 5,000 pUSD preserved in 14ms!`);
-
-    dispatchLiveTelegram(
-      `<b>[EXPLOIT INTERCEPTED — CAPITAL PRESERVED]</b>\n\n` +
-      `<b>Victim Wallet:</b> <code>${userAddress}</code>\n` +
-      `<b>Preserved Capital:</b> <b>5,000 pUSD</b>\n` +
-      `<b>Defense Action:</b> Emergency Front-Run Revoke (Gas Escalated 1.35x)\n` +
-      `<b>Preemption Latency:</b> <b>14 ms</b>\n` +
-      `<b>Tx Hash:</b> <code>${mockHash}</code>\n\n` +
-      `<a href="https://node-console.portaldot.dev/">View on Portaldot Node Console</a>\n\n` +
-      `<i>Attacker was front-ran before transaction mined. Funds remain 100% safe.</i>`
-    );
-    setTimeout(() => setTelegramAlertPulse(false), 5000);
+    addLog("[SIMULATED] Walkthrough complete. A live daemon would revoke the remaining allowance and sweep unprotected funds; it cannot undo the transfer that emitted the signal.");
+    addLog("[SIMULATION] No Telegram message was sent for this local preview. Configure the daemon to receive alerts.");
     setIsSimulating(false);
 
     try {
@@ -698,7 +635,6 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
 
   const resetSimulation = () => {
     setSimStep(0);
-    setLastTxHash("");
     setApprovals([
       {
         token: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
@@ -818,23 +754,23 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
               <div className="prompt-card">
                 <span className="quote" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Terminal size={14} color="#ff8638" /></span>
                 <span className="prompt-copy mono" id="prompt-copy">
-                  OBSERVING BLOCK STREAM...<br />
-                  pallet-revive REVM ENGINE ONLINE.
+                  {daemonMetrics ? "READING DAEMON BLOCK STREAM..." : "AWAITING DAEMON CONNECTION..."}<br />
+                  {daemonMetrics ? "DAEMON ONLINE." : "PREVIEW MODE — NO LIVE TELEMETRY."}
                 </span>
               </div>
               <div className="prompt-sub mono">
-                ZERO-CUSTODY INVARIANT ACTIVE<br />
-                PRIORITY ESCALATOR: 1.35x ARMED
+                ZERO-CUSTODY INVARIANT<br />
+                PRIORITY ESCALATOR: 1.35x — 1.85x
               </div>
               <div className="analysis-label mono">
-                <span className="pulse-dot"></span> AGENT STATUS — ACTIVE
-                <strong id="prompt-product">READY TO DEFEND</strong>
+                <span className="pulse-dot"></span> AGENT STATUS — {daemonMetrics ? "ONLINE" : "STANDBY"}
+                <strong id="prompt-product">{daemonMetrics ? "READY TO DEFEND" : "CONNECT DAEMON"}</strong>
               </div>
 
               <ul className="hero-spec mono">
                 <li>TARGET NETWORK <b>Portaldot V3</b></li>
                 <li>CHAIN ID <b>420420777</b></li>
-                <li>RPC LATENCY <b>320ms</b></li>
+                <li>RPC LATENCY <b>{daemonMetrics?.rpcLatencyMs ?? 0}ms</b></li>
                 <li>INVARIANT <b>ZERO-CUSTODY</b></li>
               </ul>
 
@@ -858,9 +794,10 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                 DETECT.<br /> PREEMPT.<br /> <span>DEFEND.</span>
               </h1>
               <p className="story-description" id="story-description">
-                An autonomous closed-loop circuit breaker purpose-built for Portaldot V3 EVM (pallet-revive). 
-                When zero-day drainers or malicious router exploits strike, PortalSentinel front-runs attackers with 
-                1.35x priority gas escalation—revoking allowances and sweeping capital to cold vaults before malicious transactions finalize.
+                An autonomous closed-loop circuit breaker purpose-built for Portaldot V3 EVM (pallet-revive).
+                When zero-day drainers or malicious router exploits strike, PortalSentinel is designed to
+                escalate priority gas, revoke allowances, and sweep capital to a user's cold vault before
+                the drain finalizes. Whether it wins the race depends on block timing, RPC behavior, and gas priority.
               </p>
 
               <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center", marginTop: "24px" }}>
@@ -869,7 +806,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                   onClick={handleSimulateAttack}
                   disabled={isSimulating}
                 >
-                  {isSimulating ? "DEFENSE IN PROGRESS..." : "SIMULATE EXPLOIT ATTACK"} <span>↗</span>
+                  {isSimulating ? "WALKTHROUGH IN PROGRESS..." : "RUN DEFENSE WALKTHROUGH"} <span>↗</span>
                 </button>
                 <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", border: "1px solid #30261e", padding: "14px 18px", background: "#0e0c0a", display: "inline-flex", alignItems: "center", gap: "6px" }}>
                   <Lock size={12} color="#78e9c4" /> ZERO-CUSTODY INVARIANT
@@ -894,8 +831,8 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                 {simStep === 1 && "EXPLOIT INBOUND — ROUTER DRAIN TRIGGERED"}
                 {simStep === 2 && "THREAT SCORER — 100/100 CRITICAL"}
                 {simStep === 3 && "PRIORITY FEE ESCALATION — 1.35x"}
-                {simStep === 4 && "EXECUTION — EMERGENCY REVOKE MINED"}
-                {simStep === 5 && "INCIDENT RESOLVED — CAPITAL SECURED"}
+                {simStep === 4 && "EXECUTION — DEFENSE DISPATCH (SIMULATED)"}
+                {simStep === 5 && "WALKTHROUGH COMPLETE — NO FUNDS MOVED"}
               </span>
               <span className="phase-status"><i></i> BLOCK #{blockHeight}</span>
             </div>
@@ -920,16 +857,17 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
           </div>
         </section>
 
-        {/* INTERACTIVE ATTACK & DEFENSE SANDBOX (THE JUDGE SHOWPIECE) */}
+        {/* INTERACTIVE ATTACK & DEFENSE WALKTHROUGH (THE JUDGE SHOWPIECE) */}
         <section id="sandbox" className="gateway" style={{ paddingBottom: "70px" }}>
           <div className="section-heading">
             <h2 className="reveal">
-              Live Exploit Intercept &<br />
-              <span className="corner-bracket">Defense Sandbox.</span>
+              Exploit Intercept &<br />
+              <span className="corner-bracket">Defense Walkthrough.</span>
             </h2>
             <p>
-              Simulate an active zero-day drain attack on Portaldot V3 EVM. 
-              Experience the autonomous front-running execution that zeroes dangerous allowances in under 2 seconds.
+              Step through a local UI walkthrough of a drain response on Portaldot V3 EVM.
+              It does not sign or broadcast anything; it shows the decision path the daemon follows
+              when a signal is scored and a defense is selected.
             </p>
           </div>
 
@@ -976,41 +914,35 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                 <div style={{ padding: "14px", border: "1px solid var(--line)", background: simStep >= 3 ? "#24140b" : "#0d0b10", borderColor: simStep >= 3 ? "#ff6a1a" : "var(--line)" }}>
                   <span className="mono" style={{ color: "#ff8638", fontSize: "10px", display: "block", marginBottom: "4px" }}>PHASE 03</span>
                   <strong style={{ display: "block", fontSize: "12px", color: "#fff", marginBottom: "4px" }}>GAS ESCALATION</strong>
-                  <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>1.35x Priority fee front-runs attacker</span>
+                  <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>Live mode escalates fees 1.35x → 1.60x → 1.85x</span>
                 </div>
 
                 <div style={{ padding: "14px", border: "1px solid var(--line)", background: simStep >= 4 ? "#24140b" : "#0d0b10", borderColor: simStep >= 4 ? "#ff6a1a" : "var(--line)" }}>
                   <span className="mono" style={{ color: "#ff8638", fontSize: "10px", display: "block", marginBottom: "4px" }}>PHASE 04</span>
                   <strong style={{ display: "block", fontSize: "12px", color: "#fff", marginBottom: "4px" }}>ATOMIC REVOCATION</strong>
-                  <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>executeEmergencyBatchRevoke mined</span>
+                  <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>executeEmergencyBatchRevoke (simulated)</span>
                 </div>
 
                 <div style={{ padding: "14px", border: "1px solid var(--line)", background: simStep >= 5 ? "#0e2417" : "#0d0b10", borderColor: simStep >= 5 ? "#78e9c4" : "var(--line)" }}>
                   <span className="mono" style={{ color: "#78e9c4", fontSize: "10px", display: "block", marginBottom: "4px" }}>PHASE 05</span>
-                  <strong style={{ display: "block", fontSize: "12px", color: "#fff", marginBottom: "4px" }}>CAPITAL RESCUED</strong>
-                  <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>Allowance = 0, exploit call reverted!</span>
+                  <strong style={{ display: "block", fontSize: "12px", color: "#fff", marginBottom: "4px" }}>ALLOWANCE WOULD BE ZEROED</strong>
+                  <span className="mono" style={{ fontSize: "10px", color: "#8b8985" }}>Demo preview only — no on-chain state changed</span>
                 </div>
               </div>
 
-              {/* Verified Hash Display */}
-              {lastTxHash && (
+              {/* Simulation notice */}
+              {simStep >= 5 && (
                 <div style={{ padding: "16px", background: "#0c1f15", border: "1px solid #78e9c466", marginTop: "15px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                    <CheckCircle2 size={13} color="#78e9c4" />
                     <span className="mono" style={{ color: "#78e9c4", fontSize: "11px", fontWeight: "bold" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><CheckCircle2 size={13} color="#78e9c4" /> DEFENSE TRANSACTION CONFIRMED ON TESTNET:</span>
+                      LOCAL UI SIMULATION — NO TRANSACTION WAS BROADCAST
                     </span>
-                    <a 
-                      href="https://node-console.portaldot.dev/" 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="mono"
-                      style={{ color: "#ff9b4d", fontSize: "10px", textDecoration: "underline" }}
-                    >
-                      View on Node Console ↗
-                    </a>
                   </div>
-                  <div className="mono" style={{ fontSize: "11px", color: "#fff", wordBreak: "break-all", background: "#050e09", padding: "10px" }}>
-                    Tx Hash: {lastTxHash}
+                  <div className="mono" style={{ fontSize: "11px", color: "#dfbc97", lineHeight: 1.6 }}>
+                    This walkthrough does not sign or send anything. To see a real defense,
+                    run the daemon against the testnet with <code>DRY_RUN=false</code> and a
+                    funded guardian key, then trigger the demo fixture.
                   </div>
                 </div>
               )}
@@ -1120,7 +1052,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                     className="mono"
                     style={{ flex: 1, minWidth: "260px", background: "#110f13", border: "1px solid #30261e", color: "#fff", padding: "10px 12px", fontSize: "12px", outline: "none" }}
                   />
-                  <span className="badge-safe" style={{ padding: "8px 12px" }}>VERIFIED SAFE</span>
+                  <span className="badge-safe" style={{ padding: "8px 12px" }}>USER-SET SAFE</span>
                 </div>
               </div>
 
@@ -1135,7 +1067,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                   />
                   <div>
                     <strong style={{ color: "#fff", fontSize: "12px", display: "block" }}>Autonomous Allowance Revocation</strong>
-                    <span style={{ color: "#8b8985", fontSize: "10px" }}>Front-run malicious router and zero allowance in mempool</span>
+                    <span style={{ color: "#8b8985", fontSize: "10px" }}>Front-run malicious router and zero allowance at block level</span>
                   </div>
                 </label>
 
@@ -1221,6 +1153,9 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                   </span>
                   <div className="mono" style={{ fontSize: "11px", color: "#8b8985", marginTop: "2px" }}>
                     Wallet: <span style={{ color: "#fff" }}>{userAddress}</span>
+                  </div>
+                  <div className="mono" style={{ fontSize: "10px", color: "#dfbc97", marginTop: "4px" }}>
+                    Default rows are sample data. Run a scan on the connected wallet to replace them with live allowances.
                   </div>
                 </div>
 
@@ -1372,7 +1307,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
               <span className="corner-bracket">Telegram Alert Bot.</span>
             </h2>
             <p>
-              Zero-visit background protection. PortalSentinel's autonomous daemon monitors the Portaldot V3 mempool continuously. 
+              Zero-visit background protection. PortalSentinel's autonomous daemon monitors Portaldot V3 blocks continuously.
               You never have to keep this website open — if an attacker targets your approvals, your phone buzzes immediately.
             </p>
           </div>
@@ -1408,13 +1343,13 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                     DO I HAVE TO STAY ON THIS SITE? <span style={{ color: "#78e9c4" }}>NO! SET & FORGET.</span>
                   </h4>
                   <p style={{ color: "#a5a3a0", fontSize: "12px", margin: 0, maxWidth: "720px", lineHeight: 1.5 }}>
-                    Once registered, the PortalSentinel daemon runs 24/7 in our validator infrastructure. It monitors the Portaldot V3 mempool while you sleep, work, or travel. Your phone will receive real-time push alerts with interactive explorer links within milliseconds of any threat interception.
+                    Once registered, run the PortalSentinel daemon on your own node or a host you control. It polls Portaldot V3 blocks and sends a Telegram advisory when it detects the configured signal. Delivery depends on block timing, RPC behavior, and Telegram availability; the dashboard does not promise a millisecond interception.
                   </p>
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <span className="mono" style={{ fontSize: "11px", color: "#78e9c4", background: "rgba(120, 233, 196, 0.1)", border: "1px solid rgba(120, 233, 196, 0.3)", padding: "6px 12px" }}>
-                  ● BOT STATUS: ACTIVE
+                  ● DAEMON ALERTS: CONFIGURED IN ENV
                 </span>
               </div>
             </div>
@@ -1494,17 +1429,17 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                     <button 
                       type="button" 
                       onClick={handleSendTestTelegram}
-                      disabled={testAlertSent}
+                      disabled={testAlertRequested}
                       className="outline-button"
                       style={{ 
                         flex: 1, 
                         padding: "10px", 
                         fontSize: "11px", 
-                        borderColor: testAlertSent ? "#78e9c4" : "var(--line)",
-                        color: testAlertSent ? "#78e9c4" : "#dfbc97"
+                        borderColor: testAlertRequested ? "#78e9c4" : "var(--line)",
+                        color: testAlertRequested ? "#78e9c4" : "#dfbc97"
                       }}
                     >
-                      {testAlertSent ? "PING DISPATCHED ↗" : (<span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><Smartphone size={12} /> TEST ALERT TO PHONE</span>)}
+                      {testAlertRequested ? "SEE LOG FOR TEST STEPS" : (<span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><Smartphone size={12} /> HOW TO TEST ALERTS</span>)}
                     </button>
                   </div>
                 </form>
@@ -1523,7 +1458,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                       style={{ accentColor: "#ff6a1a" }}
                     />
                     <span style={{ fontSize: "12px", color: "#fff", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                      <ShieldAlert size={14} color="#ff6a1a" /> <strong>Exploit Interception & Front-Run Actions</strong> (Instant)
+                      <ShieldAlert size={14} color="#ff6a1a" /> <strong>Exploit Interception & Defense Actions</strong> (Instant)
                     </span>
                   </label>
 
@@ -1566,24 +1501,24 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
 
               </div>
 
-              {/* Right Column: High-Fidelity Telegram Mobile Preview Mockup */}
+              {/* Right Column: Telegram Alert Preview Mockup */}
               <div className="sentinel-card" style={{ 
                 background: "#08060a", 
-                borderColor: telegramAlertPulse ? "#ff6a1a" : "var(--line)",
+                borderColor: testAlertRequested ? "#ff6a1a" : "var(--line)",
                 transition: "border-color 0.3s ease, box-shadow 0.3s ease",
-                boxShadow: telegramAlertPulse ? "0 0 35px rgba(255, 106, 26, 0.3)" : "none"
+                boxShadow: testAlertRequested ? "0 0 35px rgba(255, 106, 26, 0.3)" : "none"
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", borderBottom: "1px solid var(--line)", paddingBottom: "10px" }}>
                   <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                    <Smartphone size={12} color="#dfbc97" /> LIVE TELEGRAM PHONE SIMULATOR
+                    <Smartphone size={12} color="#dfbc97" /> TELEGRAM ALERT PREVIEW (MOCKUP)
                   </span>
-                  {telegramAlertPulse ? (
-                    <span className="mono" style={{ fontSize: "10px", color: "#ff6a1a", animation: "blink 1s infinite" }}>
-                      ● NEW NOTIFICATION ARRIVED
+                  {testAlertRequested ? (
+                    <span className="mono" style={{ fontSize: "10px", color: "#ff6a1a" }}>
+                      ● TEST INSTRUCTIONS IN LOG
                     </span>
                   ) : (
                     <span className="mono" style={{ fontSize: "10px", color: "#78e9c4" }}>
-                      ● STANDBY / ARMED
+                      ● ILLUSTRATIVE ONLY
                     </span>
                   )}
                 </div>
@@ -1653,7 +1588,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                         <AlertTriangle size={12} color="#ff8638" /> CRITICAL THREAT DETECTED
                       </div>
                       <div style={{ fontSize: "11px", color: "#dfbc97", lineHeight: 1.4, marginBottom: "6px" }}>
-                        PortalSentinel mempool listener identified unauthorized <code>transferFrom</code> attempt.
+                        PortalSentinel block scanner identified unauthorized <code>transferFrom</code> attempt.
                       </div>
                       <div className="mono" style={{ fontSize: "10px", color: "#8b8985", background: "#0c0a10", padding: "6px", borderRadius: "6px", marginBottom: "6px" }}>
                         <div>Victim: 0x6198fA0e...9C74</div>
@@ -1661,7 +1596,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                         <div>Threat Score: 100/100</div>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "9px", color: "#ff6a1a" }}>Priority 1.35x Front-Running...</span>
+                        <span style={{ fontSize: "9px", color: "#ff6a1a" }}>Dispatching 1.35x fee defense...</span>
                         <span style={{ fontSize: "9px", color: "#8b8985" }}>10:14 AM</span>
                       </div>
                     </div>
@@ -1675,15 +1610,15 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                       border: "1px solid rgba(120, 233, 196, 0.35)"
                     }}>
                       <div style={{ fontSize: "11px", color: "#78e9c4", fontWeight: "bold", marginBottom: "4px", display: "flex", alignItems: "center", gap: "5px" }}>
-                        <ShieldCheck size={12} color="#78e9c4" /> EXPLOIT NEUTRALIZED — FUNDS SAFE
+                        <ShieldCheck size={12} color="#78e9c4" /> EXPLOIT NEUTRALIZED — PREVIEW
                       </div>
                       <div style={{ fontSize: "11px", color: "#fff", lineHeight: 1.4, marginBottom: "6px" }}>
-                        Attacker front-ran in <strong>14 ms</strong>! Allowance zeroed before malicious transfer mined.
+                        Defense would be confirmed on-chain after a successful live dispatch. Remaining allowance would be zeroed and funds swept to the cold safe.
                       </div>
                       <div className="mono" style={{ fontSize: "10px", color: "#78e9c4", background: "#06130d", padding: "6px", borderRadius: "6px", marginBottom: "8px" }}>
-                        <div>Saved: 5,000 pUSD</div>
+                        <div>Protected: remaining pUSD</div>
                         <div>Action: EmergencyBatchRevoke</div>
-                        <div>Block: #{blockHeight}</div>
+                        <div>Block: #preview</div>
                       </div>
                       {/* Interactive Telegram Button */}
                       <a 
@@ -1741,7 +1676,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
               <span className="corner-bracket">Telemetry Terminal.</span>
             </h2>
             <p>
-              Real-time monitoring daemon feed connecting to Portaldot V3 EVM and Substrate nodes with built-in CLI inspection tooling.
+              Daemon telemetry and operator tooling for Portaldot V3 EVM, with CLI inspection commands for node runners.
             </p>
           </div>
 
@@ -1752,10 +1687,10 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
               <div className="sentinel-card">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", borderBottom: "1px solid var(--line)", paddingBottom: "10px" }}>
                   <span className="mono" style={{ fontSize: "11px", color: "#dfbc97", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                    <Terminal size={12} color="#dfbc97" /> SENTINEL DAEMON STREAMING FEED
+                    <Terminal size={12} color="#dfbc97" /> DASHBOARD ACTIVITY LOG
                   </span>
-                  <span className="mono" style={{ fontSize: "10px", color: "#78e9c4" }}>
-                    ● LIVE MEMPOOL
+                  <span className="mono" style={{ fontSize: "10px", color: daemonMetrics ? "#78e9c4" : "#ff8638" }}>
+                    ● {daemonMetrics ? "DAEMON ONLINE" : "PREVIEW / OFFLINE"}
                   </span>
                 </div>
                 <div className="terminal-window">
@@ -1772,26 +1707,26 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                     <BarChart3 size={13} color="#ff8638" /> PROMETHEUS METRICS & OBSERVABILITY
                   </span>
                   <span className="mono" style={{ fontSize: "10px", color: daemonMetrics ? "#78e9c4" : "#ff8638" }}>
-                    ● {daemonMetrics ? "API ONLINE (PORT 3001)" : "DAEMON STANDBY"}
+                    ● {daemonMetrics ? `API ONLINE — ${daemonMetrics.dryRun ? "DRY RUN" : "LIVE"}` : "DAEMON STANDBY"}
                   </span>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
                   <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "10px" }}>
                     <span className="mono" style={{ fontSize: "9px", color: "#8b8985", display: "block" }}>MONITORED BLOCK:</span>
-                    <strong className="mono" style={{ color: "#fff", fontSize: "14px" }}>#{daemonMetrics?.blockHeight || blockHeight}</strong>
+                    <strong className="mono" style={{ color: "#fff", fontSize: "14px" }}>#{daemonMetrics?.blockHeight ?? blockHeight}</strong>
                   </div>
                   <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "10px" }}>
                     <span className="mono" style={{ fontSize: "9px", color: "#8b8985", display: "block" }}>RPC ROUNDTRIP LATENCY:</span>
-                    <strong className="mono" style={{ color: "#78e9c4", fontSize: "14px" }}>{daemonMetrics?.rpcLatencyMs || 38} ms</strong>
+                    <strong className="mono" style={{ color: "#78e9c4", fontSize: "14px" }}>{daemonMetrics?.rpcLatencyMs ?? 0} ms</strong>
                   </div>
                   <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "10px" }}>
                     <span className="mono" style={{ fontSize: "9px", color: "#8b8985", display: "block" }}>THREATS DETECTED:</span>
-                    <strong className="mono" style={{ color: "#ff8638", fontSize: "14px" }}>{daemonMetrics?.threatsDetected || 0}</strong>
+                    <strong className="mono" style={{ color: "#ff8638", fontSize: "14px" }}>{daemonMetrics?.threatsDetected ?? 0}</strong>
                   </div>
                   <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "10px" }}>
                     <span className="mono" style={{ fontSize: "9px", color: "#8b8985", display: "block" }}>DEFENSES EXECUTED:</span>
-                    <strong className="mono" style={{ color: "#78e9c4", fontSize: "14px" }}>{daemonMetrics?.defensesExecuted || 0} (14ms)</strong>
+                    <strong className="mono" style={{ color: "#78e9c4", fontSize: "14px" }}>{daemonMetrics?.defensesExecuted ?? 0}</strong>
                   </div>
                 </div>
 
@@ -1894,7 +1829,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
             <h4>SECURITY GUARANTEES</h4>
             <span className="mono" style={{ fontSize: "11px", color: "#b1a0bd" }}>Zero-Custody Contract Invariant</span>
             <span className="mono" style={{ fontSize: "11px", color: "#b1a0bd" }}>Scoped Guardian Authorization</span>
-            <span className="mono" style={{ fontSize: "11px", color: "#b1a0bd" }}>Front-Running Preemption</span>
+            <span className="mono" style={{ fontSize: "11px", color: "#b1a0bd" }}>Fee-Escalated Defense Dispatch</span>
           </div>
 
           <div>

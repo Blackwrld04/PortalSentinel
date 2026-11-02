@@ -7,6 +7,7 @@ import { ethers } from "ethers";
 import { CONFIG } from "./config.js";
 import { ThreatScorer, ThreatSignal } from "./threatScorer.js";
 import { telegramNotifier } from "./telegramNotifier.js";
+import type { DefenseDispatchResult } from "./dispatcher.js";
 
 async function runAttackSimulation() {
   console.log("==================================================================");
@@ -43,45 +44,55 @@ async function runAttackSimulation() {
 
   const mockSignal: ThreatSignal = {
     sourceAddress: hackerWallet,
+    spenderAddress: CONFIG.contracts.mockExploit,
     targetVictim: victimWallet,
     tokenAddress: CONFIG.contracts.mockToken,
     amount: ethers.parseUnits("5000", 18),
     eventName: "AttackInitiated",
-    txHash: "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(""),
-    blockNumber: currentBlock
+    // No on-chain transaction exists: keep the hash explicitly empty rather than fake.
+    txHash: "0x" + "0".repeat(64),
+    blockNumber: currentBlock,
+    simulated: true
   };
 
   console.log(`\n[3/5] Simulating Inbound Threat Signal:`);
   console.log(`      [EXEC] Event: ${mockSignal.eventName}`);
   console.log(`      [ASSET] Draining Target: 5,000 pUSD`);
+  console.log(`      [NOTE] Synthetic signal — no transaction was broadcast.`);
 
   // Run threat scoring engine
   const evalResult = ThreatScorer.evaluate(mockSignal, 1); // 1 = BALANCED
 
   console.log(`\n[4/5] Sentinel Threat Evaluation:`);
   console.log(`      Score:       ${evalResult.threatScore}/100 [${evalResult.severity}]`);
-  console.log(`      Decision:    ${evalResult.shouldDefend ? "[ALERT] AUTO-DEFENSE TRIGGERED" : "PASS"}`);
+  console.log(`      Decision:    ${evalResult.shouldDefend ? "[ALERT] AUTO-DEFENSE WOULD TRIGGER" : "PASS"}`);
   console.log(`      Action:      ${evalResult.recommendedAction}`);
   console.log(`      Reasons:`);
   for (const reason of evalResult.reasons) {
     console.log(`        - ${reason}`);
   }
 
-  console.log(`\n[5/5] Dispatching Instant Telegram Alerts...`);
-  await telegramNotifier.sendThreatDetectedAlert(mockSignal, evalResult);
+  console.log(`\n[5/5] Sending Telegram Advisories (if configured)...`);
+  const threatAlertSent = await telegramNotifier.sendThreatDetectedAlert(mockSignal, evalResult);
 
-  const mockDefenseResult = {
+  const mockDefenseResult: DefenseDispatchResult = {
     success: true,
-    txHash: "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(""),
-    blockNumber: currentBlock + 1,
-    latencyMs: 14,
-    actionExecuted: evalResult.recommendedAction
+    simulated: true,
+    duplicate: false,
+    txHash: "",
+    blockNumber: 0,
+    latencyMs: 0,
+    actionExecuted: evalResult.recommendedAction,
+    attempts: 0
   };
 
-  await telegramNotifier.sendDefenseExecutedAlert(mockDefenseResult, mockSignal, evalResult);
+  const defenseAlertSent = await telegramNotifier.sendDefenseExecutedAlert(mockDefenseResult, mockSignal, evalResult);
 
   console.log("\n==================================================================");
-  console.log("   [OK] Simulation Complete! Scoring & Telegram Notification Verified");
+  console.log("   [OK] Simulation complete. No on-chain transaction was broadcast.");
+  console.log(
+    `   Telegram advisories: ${threatAlertSent && defenseAlertSent ? "sent" : "not sent (disabled or failed)"}`
+  );
   console.log("==================================================================");
 }
 

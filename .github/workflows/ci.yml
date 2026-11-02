@@ -47,8 +47,14 @@ jobs:
         working-directory: daemon
         run: npm run build
 
-      - name: Test Simulation
+      - name: Unit Tests
         working-directory: daemon
+        run: npm test
+
+      - name: Test Simulation (integration smoke, public RPC)
+        working-directory: daemon
+        # Depends on the public Portaldot testnet RPC, so do not block builds on it.
+        continue-on-error: true
         run: npm run simulate
 
   frontend:
@@ -71,3 +77,28 @@ jobs:
       - name: Build Dashboard
         working-directory: frontend
         run: npm run build
+
+  containers:
+    name: Container Builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build daemon image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runner
+          push: false
+          tags: portalsentinel-daemon:ci
+
+      - name: Build dashboard image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: frontend
+          push: false
+          tags: portalsentinel-dashboard:ci

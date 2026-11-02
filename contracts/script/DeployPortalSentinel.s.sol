@@ -9,7 +9,8 @@ import { MockExploitFixture } from "../src/MockExploitFixture.sol";
 
 contract DeployPortalSentinel is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80));
+        // No default key: deployment must be explicit about which operator pays and signs.
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
 
         console.log("=================================================");

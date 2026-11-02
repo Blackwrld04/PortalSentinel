@@ -1,41 +1,61 @@
-# Build stage
+# ─── Build stage ───────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy dependency manifests
-COPY package*.json ./
+# Dependency manifests only, so source changes do not bust the install cache.
 COPY daemon/package*.json ./daemon/
 COPY frontend/package*.json ./frontend/
 
-# Install dependencies
-RUN npm ci && cd daemon && npm ci && cd ../frontend && npm ci
+RUN cd daemon && npm ci
+RUN cd frontend && npm ci
 
-# Copy full source
-COPY . .
+# Source
+COPY daemon ./daemon
+COPY frontend ./frontend
 
-# Build contracts, daemon and frontend
 RUN cd daemon && npm run build
 RUN cd frontend && npm run build
 
-# Production Runner stage
+# ─── Daemon runner ─────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
+# Portaldot's RPC is dual-stack; IPv6 can be unreachable in container networks.
+ENV NODE_OPTIONS="--dns-result-order=ipv4first --no-network-family-autoselection"
 
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/daemon/package*.json ./daemon/
+RUN addgroup -S sentinel && adduser -S sentinel -G sentinel \
+    && mkdir -p /data && chown sentinel:sentinel /data
+
+# The block journal must survive container restarts and be writable by the
+# non-root user; /app itself is root-owned.
+ENV STATE_FILE=/data/.sentinel-state.json
+
+# Install only production dependencies, deterministically from the lockfile.
+COPY daemon/package.json daemon/package-lock.json ./daemon/
+RUN cd daemon && npm ci --omit=dev
+
 COPY --from=builder /app/daemon/dist ./daemon/dist
-COPY --from=builder /app/daemon/node_modules ./daemon/node_modules
-COPY --from=builder /app/frontend/dist ./frontend/dist
 
-# Expose ports if needed
-EXPOSE 3000
+USER sentinel
 
-# Health check against Portaldot V3 EVM RPC
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node daemon/dist/cli.js health || exit 1
+# The daemon only exposes the metrics/health API; the dashboard is a separate stage.
+EXPOSE 3001
 
-# Default command: launch the continuous closed-loop sentinel daemon
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3001/health || exit 1
+
 CMD ["node", "daemon/dist/index.js"]
+
+# ─── Dashboard runner ──────────────────────────────────────────────────────────
+FROM nginx:alpine AS frontend
+
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1/ || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

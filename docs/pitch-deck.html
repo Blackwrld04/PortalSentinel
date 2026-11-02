@@ -272,8 +272,11 @@
           Autonomous Closed-Loop Security Firewall & Circuit Breaker for Portaldot V3 EVM.
         </p>
         <p style="color: var(--text-muted); font-size: 15px; margin-top: 15px;">
-          Preempting zero-day approval drains in under 15ms via <code style="color: var(--accent-glow);">pallet-revive</code> RISC-V PolkaVM, 1.35x gas priority front-running, and 24/7 mobile Telegram autopilot.
+          Reacts to a configured drain signal, attempts an on-chain defense, and sends Telegram advisories via <code style="color: var(--accent-glow);">pallet-revive</code> RISC-V PolkaVM. The current P0 detection path is block-poll based; see the production hardening plan for scope.
         </p>
+        <div class="badge badge-orange" style="margin-top: 18px; background: rgba(255,106,26,0.12); color: #ffb067;">
+          PROTOTYPE — HARDENING IN PROGRESS · FIGURES BELOW ARE DESIGN TARGETS, NOT MEASUREMENTS
+        </div>
       </div>
       <div class="slide-footer">
         <span>Team: PortalSentinel Core</span>
@@ -319,25 +322,25 @@
         <span class="slide-num">03 / 09</span>
       </div>
       <div>
-        <h2>Autonomous Closed-Loop Mempool Firewall</h2>
+        <h2>Autonomous Closed-Loop Defense Firewall</h2>
         <p class="lead">
-          PortalSentinel replaces post-hack forensic mourning with automated, proactive mempool preemption.
+          PortalSentinel aims to shorten the gap between detection and an on-chain defensive response.
         </p>
         <div class="grid-2">
           <div class="box highlight">
-            <div class="metric-val">&lt; 15 ms</div>
-            <h3>Sub-Second Front-Run Preemption</h3>
-            <p>Colocated daemon streams blocks and pending calls from Portaldot V3 EVM. On confirmed threat (score ≥ 60), it broadcasts an emergency defense transaction with a 1.35x priority fee multiplier, mining ahead of the attacker.</p>
+            <div class="metric-val">1.35–1.85×</div>
+            <h3>Priority Fee Escalation</h3>
+            <p>The daemon polls Portaldot V3 EVM blocks and, on a confirmed threat (score ≥ 60), broadcasts an emergency defense transaction with a 1.35× priority fee multiplier, rising on retries. Higher fees improve inclusion odds but do not guarantee ordering ahead of the attacker.</p>
           </div>
           <div class="box teal">
-            <div class="metric-val" style="color: var(--accent-teal);">100%</div>
-            <h3>Universal Dual-Defense Architecture</h3>
-            <p>Combines <strong>Atomic Batch Revocation</strong> (zeroing allowances) with <strong>Emergency Capital Sweep</strong> (<code style="color: var(--accent-teal);">executeEmergencySweep</code>), which rescues standard ERC-20 tokens directly into the user's cold vault.</p>
+            <div class="metric-val" style="color: var(--accent-teal);">12/12</div>
+            <h3>Dual-Defense Architecture</h3>
+            <p>Combines <strong>Atomic Batch Revocation</strong> (zeroing allowances and verifying the result) with <strong>Emergency Capital Sweep</strong> (<code style="color: var(--accent-teal);">executeEmergencySweep</code>), which moves remaining standard ERC-20 tokens into the user's cold vault. Internal Foundry tests, not an external audit.</p>
           </div>
         </div>
       </div>
       <div class="slide-footer">
-        <span>Closed-Loop: Detection → Anomaly Scoring → Priority Gas Front-Run → Capital Saved</span>
+        <span>Closed Loop: Detection → Scoring → Fee Escalation → Revocation / Sweep</span>
       </div>
     </div>
 
@@ -369,8 +372,8 @@
             <p>Zeroing allowances (<code style="color: #fff;">approve(spender, 0)</code>) strips exploit rights without spending user tokens.</p>
           </div>
           <div class="box">
-            <h3>100% Foundry Pass</h3>
-            <p>6/6 Foundry unit and invariant tests verifying that rogue callers or invalid safes are instantly rejected.</p>
+            <h3>12/12 Foundry Tests Passing</h3>
+            <p>Internal unit and invariant tests verifying that rogue callers, invalid safes, paused registries, and empty sweeps are rejected.</p>
           </div>
         </div>
       </div>
@@ -494,8 +497,8 @@
         <div class="grid-2">
           <div class="box">
             <h3>Freemium Security Model</h3>
-            <p><strong>Retail Tier (Free):</strong> Standard mempool monitoring, basic Telegram alerts, 1-click manual revoke UI.</p>
-            <p style="margin-top: 10px;"><strong>Institutional Tier (Subscription / Fee):</strong> Dedicated validator peering, custom sweep rules for DAOs and treasuries, priority preemption guarantees, SLA uptime.</p>
+            <p><strong>Retail Tier (Free):</strong> Block monitoring, basic Telegram alerts, 1-click manual revoke UI.</p>
+            <p style="margin-top: 10px;"><strong>Institutional Tier (Subscription / Fee):</strong> Dedicated validator peering, custom sweep rules for DAOs and treasuries, priority fee escalation, SLA uptime.</p>
           </div>
           <div class="box highlight">
             <h3>Portaldot Foundation Grant Alignment</h3>

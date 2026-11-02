@@ -6,6 +6,8 @@ export interface SentinelMetricsState {
   rpcLatencyMs: number;
   threatsDetected: number;
   defensesExecuted: number;
+  defensesSimulated: number;
+  defensesFailed: number;
   alertsSent: number;
   lastDefenseLatencyMs: number;
   uptimeStart: number;
@@ -19,33 +21,44 @@ export class MetricsServer {
     rpcLatencyMs: 0,
     threatsDetected: 0,
     defensesExecuted: 0,
+    defensesSimulated: 0,
+    defensesFailed: 0,
     alertsSent: 0,
-    lastDefenseLatencyMs: 14,
+    lastDefenseLatencyMs: 0,
     uptimeStart: Date.now(),
-    isArmed: true,
-    activeShieldedUsers: 1,
+    isArmed: !CONFIG.guardian.dryRun,
+    activeShieldedUsers: 0,
   };
 
   private server: http.Server | null = null;
   private port: number;
+  private host: string;
 
-  constructor(port = Number(process.env.METRICS_PORT) || 3001) {
+  constructor(port = CONFIG.metrics.port, host = CONFIG.metrics.host) {
     this.port = port;
+    this.host = host;
   }
 
   public updateMetric<K extends keyof SentinelMetricsState>(key: K, value: SentinelMetricsState[K]) {
     this.state[key] = value;
   }
 
-  public incrementMetric(key: "threatsDetected" | "defensesExecuted" | "alertsSent") {
+  public incrementMetric(
+    key:
+      | "threatsDetected"
+      | "defensesExecuted"
+      | "defensesSimulated"
+      | "defensesFailed"
+      | "alertsSent"
+  ) {
     this.state[key]++;
   }
 
   public start(): Promise<number> {
     return new Promise((resolve) => {
       this.server = http.createServer((req, res) => {
-        // Enable CORS for frontend dashboard queries
-        res.setHeader("Access-Control-Allow-Origin", "*");
+        // Restrict CORS to the dashboard origin instead of every origin.
+        res.setHeader("Access-Control-Allow-Origin", CONFIG.metrics.corsOrigin);
         res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
         res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
@@ -73,6 +86,7 @@ export class MetricsServer {
                 },
                 contracts: CONFIG.contracts,
                 telegramEnabled: CONFIG.telegram.enabled,
+                dryRun: CONFIG.guardian.dryRun,
               },
               null,
               2
@@ -96,17 +110,29 @@ export class MetricsServer {
             `# TYPE sentinel_threats_detected_total counter`,
             `sentinel_threats_detected_total ${this.state.threatsDetected}`,
             ``,
-            `# HELP sentinel_defenses_executed_total Total autonomous front-run defenses executed`,
+            `# HELP sentinel_defenses_executed_total Total autonomous defenses confirmed on-chain`,
             `# TYPE sentinel_defenses_executed_total counter`,
             `sentinel_defenses_executed_total ${this.state.defensesExecuted}`,
             ``,
-            `# HELP sentinel_preemption_latency_ms Latency of most recent defense action in ms`,
-            `# TYPE sentinel_preemption_latency_ms gauge`,
-            `sentinel_preemption_latency_ms ${this.state.lastDefenseLatencyMs}`,
+            `# HELP sentinel_defenses_simulated_total Total defenses selected but not broadcast (dry run)`,
+            `# TYPE sentinel_defenses_simulated_total counter`,
+            `sentinel_defenses_simulated_total ${this.state.defensesSimulated}`,
+            ``,
+            `# HELP sentinel_defenses_failed_total Total autonomous defenses that failed`,
+            `# TYPE sentinel_defenses_failed_total counter`,
+            `sentinel_defenses_failed_total ${this.state.defensesFailed}`,
+            ``,
+            `# HELP sentinel_defense_latency_ms Latency of most recent defense action in ms`,
+            `# TYPE sentinel_defense_latency_ms gauge`,
+            `sentinel_defense_latency_ms ${this.state.lastDefenseLatencyMs}`,
             ``,
             `# HELP sentinel_telegram_alerts_sent_total Total alerts dispatched to Telegram`,
             `# TYPE sentinel_telegram_alerts_sent_total counter`,
             `sentinel_telegram_alerts_sent_total ${this.state.alertsSent}`,
+            ``,
+            `# HELP sentinel_dry_run 1 when the daemon is in dry-run mode, 0 when live`,
+            `# TYPE sentinel_dry_run gauge`,
+            `sentinel_dry_run ${CONFIG.guardian.dryRun ? 1 : 0}`,
             ``,
             `# HELP sentinel_uptime_seconds Total daemon uptime in seconds`,
             `# TYPE sentinel_uptime_seconds counter`,
@@ -127,10 +153,10 @@ export class MetricsServer {
         res.end(JSON.stringify({ error: "Endpoint not found" }));
       });
 
-      this.server.listen(this.port, () => {
-        console.log(`📊 [METRICS SERVER] Telemetry & Prometheus API listening on http://localhost:${this.port}`);
-        console.log(`   • Health Endpoint:     http://localhost:${this.port}/health`);
-        console.log(`   • Prometheus Metrics:  http://localhost:${this.port}/metrics`);
+      this.server.listen(this.port, this.host, () => {
+        console.log(`📊 [METRICS SERVER] Telemetry & Prometheus API listening on http://${this.host}:${this.port}`);
+        console.log(`   • Health Endpoint:     http://${this.host}:${this.port}/health`);
+        console.log(`   • Prometheus Metrics:  http://${this.host}:${this.port}/metrics`);
         resolve(this.port);
       });
     });

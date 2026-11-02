@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Autonomous On-Chain Security Firewall & Circuit Breaker for Portaldot V3 EVM",
   "scripts": {
-    "test": "cd contracts && forge test -vvv",
+    "test": "npm run test:contracts",
+    "test:contracts": "cd contracts && forge test -vvv",
+    "test:unit": "cd daemon && npm test",
     "test:daemon": "cd daemon && npm run simulate",
     "build:contracts": "cd contracts && forge build",
     "build:daemon": "cd daemon && npm run build",

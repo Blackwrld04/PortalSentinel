@@ -388,7 +388,7 @@ export const SentinelGuardian: React.FC<SentinelGuardianProps> = ({
               ? "STATUS: FRONT-RUNNING DRAIN" 
               : isSuccess 
               ? "STATUS: CAPITAL SECURED" 
-              : "STATUS: SCANNING MEMPOOL"}
+              : "STATUS: SCANNING BLOCKS"}
           </span>
         </div>
       </div>
