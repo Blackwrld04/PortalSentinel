@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#221108"/>
+      <stop offset="55%" stop-color="#0d0b0c"/>
+      <stop offset="100%" stop-color="#070607"/>
+    </radialGradient>
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff6a1a" stop-opacity="0.32"/>
+      <stop offset="65%" stop-color="#ff6a1a" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#ff6a1a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff9b4d"/>
+      <stop offset="50%" stop-color="#ff6a1a"/>
+      <stop offset="100%" stop-color="#c83e00"/>
+    </linearGradient>
+    <radialGradient id="eyeGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#ff9b4d"/>
+      <stop offset="100%" stop-color="#ff6a1a" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Outer Dark Rounded Square Background -->
+  <rect width="1024" height="1024" rx="210" fill="url(#bgGlow)"/>
+  <rect x="24" y="24" width="976" height="976" rx="190" fill="none" stroke="#ff6a1a" stroke-opacity="0.22" stroke-width="4"/>
+
+  <!-- Subtle Ambient Aura -->
+  <circle cx="512" cy="512" r="420" fill="url(#coreGlow)"/>
+
+  <!-- Outer Telemetry HUD Ring -->
+  <circle cx="512" cy="512" r="356" fill="none" stroke="#ff6a1a" stroke-opacity="0.24" stroke-width="3" stroke-dasharray="18 14"/>
+
+  <!-- Corner Circuit Brackets -->
+  <path d="M 150 250 L 150 166 L 234 166" fill="none" stroke="#ff6a1a" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 874 250 L 874 166 L 790 166" fill="none" stroke="#ff6a1a" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 150 774 L 150 858 L 234 858" fill="none" stroke="#ff6a1a" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 874 774 L 874 858 L 790 858" fill="none" stroke="#ff6a1a" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Core Brand Circle (.brand-icon exact geometry) -->
+  <circle cx="512" cy="512" r="290" fill="#0a0908" stroke="url(#ringGrad)" stroke-width="36" filter="url(#softGlow)"/>
+  <circle cx="512" cy="512" r="244" fill="none" stroke="#ff9b4d" stroke-opacity="0.18" stroke-width="3"/>
+
+  <!-- Inner Visor Track -->
+  <rect x="292" y="428" width="440" height="168" rx="84" fill="#120f0d" stroke="#ff6a1a" stroke-opacity="0.35" stroke-width="4"/>
+
+  <!-- Left Sentinel Eye (•) -->
+  <circle cx="412" cy="512" r="76" fill="url(#eyeGlow)" opacity="0.55"/>
+  <circle cx="412" cy="512" r="46" fill="#ff9b4d" filter="url(#softGlow)"/>
+  <circle cx="412" cy="512" r="24" fill="#ffffff"/>
+
+  <!-- Right Sentinel Eye (•) -->
+  <circle cx="612" cy="512" r="76" fill="url(#eyeGlow)" opacity="0.55"/>
+  <circle cx="612" cy="512" r="46" fill="#ff9b4d" filter="url(#softGlow)"/>
+  <circle cx="612" cy="512" r="24" fill="#ffffff"/>
+</svg>
