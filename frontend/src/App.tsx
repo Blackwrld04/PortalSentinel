@@ -177,11 +177,11 @@ export default function App() {
   const connectWallet = async () => {
     if (typeof window === "undefined") return;
     setIsConnectingWallet(true);
-    addLog("[SUBWALLET] Requesting SubWallet connection...");
+    addLog("[SUBWALLET] Opening SubWallet extension popup...");
 
     const finalizeSubWalletConnection = (addr?: string) => {
       const finalSs58 =
-        addr && addr.trim().length > 0
+        addr && addr.trim().length > 0 && addr.trim().startsWith("5")
           ? addr.trim()
           : "5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni";
       setSs58Address(finalSs58);
@@ -196,6 +196,11 @@ export default function App() {
     };
 
     try {
+      // Wait briefly if injectedWeb3 is still initializing on page load
+      if (!(window as any).injectedWeb3?.["subwallet-js"]) {
+        await new Promise((r) => setTimeout(r, 250));
+      }
+
       const injectedWeb3 = (window as any).injectedWeb3;
       const subwalletSubstrate =
         injectedWeb3?.["subwallet-js"] ||
@@ -204,50 +209,72 @@ export default function App() {
         (injectedWeb3 ? Object.values(injectedWeb3)[0] : null);
 
       if (subwalletSubstrate && typeof subwalletSubstrate.enable === "function") {
-        // Trigger SubWallet popup in background and also resolve UI within 500ms if extension is already open/pending
-        const enablePromise = (async () => {
-          try {
-            const ext: any = await subwalletSubstrate.enable("PortalSentinel");
-            const accounts =
-              (await ext?.accounts?.get?.(true).catch(() => null)) ||
-              (await ext?.accounts?.get?.().catch(() => null)) ||
-              [];
-            const matched =
-              accounts.find((a: any) =>
-                a?.address?.startsWith("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni")
-              ) ||
-              accounts.find((a: any) => a?.type !== "ethereum" && a?.address) ||
-              accounts[0];
-            if (matched?.address) {
-              finalizeSubWalletConnection(matched.address);
-              return true;
-            }
-          } catch {
-            // Handled by fallback below
+        const t0 = Date.now();
+        const ext: any = await subwalletSubstrate.enable("PortalSentinel");
+        const enableElapsedMs = Date.now() - t0;
+
+        const accounts: any[] =
+          (await ext?.accounts?.get?.(true).catch(() => null)) ||
+          (await ext?.accounts?.get?.().catch(() => null)) ||
+          [];
+
+        const matched =
+          accounts.find((a: any) =>
+            a?.address?.startsWith("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni")
+          ) ||
+          accounts.find((a: any) => a?.type !== "ethereum" && a?.address) ||
+          accounts[0];
+
+        // If enable() resolved immediately from SubWallet's website-access cache (<1200ms),
+        // explicitly open the SubWallet extension popup via signRaw or wallet_requestPermissions
+        // so the user always gets the real SubWallet extension popup to approve.
+        if (enableElapsedMs < 1200) {
+          if (matched?.address && ext?.signer?.signRaw && matched?.type !== "ethereum") {
+            const payload = `PortalSentinel::connectSubWallet(\n  account: ${matched.address},\n  testnetSS58: 5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni,\n  network: Portaldot V3 Testnet (Chain ID 420420777)\n)`;
+            const hexData =
+              "0x" +
+              Array.from(new TextEncoder().encode(payload))
+                .map((b) => b.toString(16).padStart(2, "0"))
+                .join("");
+            await ext.signer.signRaw({
+              address: matched.address,
+              data: hexData,
+              type: "bytes",
+            });
+          } else if ((window as any).SubWallet?.request) {
+            await (window as any).SubWallet.request({
+              method: "wallet_requestPermissions",
+              params: [{ eth_accounts: {} }],
+            });
           }
-          return false;
-        })();
-
-        const resolvedFast = await Promise.race([
-          enablePromise,
-          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 600)),
-        ]);
-
-        if (!resolvedFast) {
-          finalizeSubWalletConnection("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni");
         }
+
+        finalizeSubWalletConnection(matched?.address);
         return;
       }
 
+      // Fallback to SubWallet EVM provider popup (never window.ethereum / MetaMask)
       const subwalletEvm = (window as any).SubWallet;
       if (subwalletEvm && typeof subwalletEvm.request === "function") {
-        subwalletEvm.request({ method: "eth_requestAccounts" }).catch(() => {});
+        try {
+          await subwalletEvm.request({
+            method: "wallet_requestPermissions",
+            params: [{ eth_accounts: {} }],
+          });
+        } catch {
+          await subwalletEvm.request({ method: "eth_requestAccounts" });
+        }
+        finalizeSubWalletConnection("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni");
+        return;
       }
-    } catch {
-      // Fallback below
-    }
 
-    finalizeSubWalletConnection("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni");
+      addLog("[SUBWALLET ERROR] SubWallet extension not detected. Please ensure SubWallet is enabled in your browser.");
+      setIsConnectingWallet(false);
+    } catch (err: any) {
+      const msg = String(err?.message || err || "");
+      addLog(`[SUBWALLET] Extension prompt status: ${msg}`);
+      setIsConnectingWallet(false);
+    }
   };
 
   const switchNetwork = async () => {
@@ -356,25 +383,27 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
         (injectedWeb3 ? Object.values(injectedWeb3)[0] : null);
 
       if (subwalletSubstrate && typeof subwalletSubstrate.enable === "function") {
-        try {
-          const ext: any = await subwalletSubstrate.enable("PortalSentinel");
-          const accts = (await ext?.accounts?.get?.()) || [];
-          const signAddr = accts[0]?.address || ss58Address || "5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni";
-          if (ext?.signer?.signRaw) {
-            const payload = `PortalSentinel::registerShield(account=${signAddr},mode=${defenseMode},safe=${emergencySafe || signAddr},chainId=420420777)`;
-            const hexData =
-              "0x" +
-              Array.from(new TextEncoder().encode(payload))
-                .map((b) => b.toString(16).padStart(2, "0"))
-                .join("");
-            await ext.signer.signRaw({
-              address: signAddr,
-              data: hexData,
-              type: "bytes",
-            });
-          }
-        } catch {
-          // Proceed with Portaldot V3 Registry synchronization
+        const ext: any = await subwalletSubstrate.enable("PortalSentinel");
+        const accts: any[] =
+          (await ext?.accounts?.get?.(true).catch(() => null)) ||
+          (await ext?.accounts?.get?.().catch(() => null)) ||
+          [];
+        const matched =
+          accts.find((a: any) => a?.type !== "ethereum" && a?.address) || accts[0];
+        const signAddr =
+          matched?.address || ss58Address || "5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni";
+        if (ext?.signer?.signRaw && matched?.type !== "ethereum") {
+          const payload = `PortalSentinel::registerShield(account=${signAddr},mode=${defenseMode},safe=${emergencySafe || signAddr},chainId=420420777)`;
+          const hexData =
+            "0x" +
+            Array.from(new TextEncoder().encode(payload))
+              .map((b) => b.toString(16).padStart(2, "0"))
+              .join("");
+          await ext.signer.signRaw({
+            address: signAddr,
+            data: hexData,
+            type: "bytes",
+          });
         }
       }
 
@@ -548,25 +577,27 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
         (injectedWeb3 ? Object.values(injectedWeb3)[0] : null);
 
       if (subwalletSubstrate && typeof subwalletSubstrate.enable === "function") {
-        try {
-          const ext: any = await subwalletSubstrate.enable("PortalSentinel");
-          const accts = (await ext?.accounts?.get?.()) || [];
-          const signAddr = accts[0]?.address || ss58Address || "5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni";
-          if (ext?.signer?.signRaw) {
-            const payload = `PortalSentinel::revoke(account=${signAddr},token=${item.token},spender=${item.spender},allowance=0)`;
-            const hexData =
-              "0x" +
-              Array.from(new TextEncoder().encode(payload))
-                .map((b) => b.toString(16).padStart(2, "0"))
-                .join("");
-            await ext.signer.signRaw({
-              address: signAddr,
-              data: hexData,
-              type: "bytes",
-            });
-          }
-        } catch {
-          // Proceed with zero-allowance update
+        const ext: any = await subwalletSubstrate.enable("PortalSentinel");
+        const accts: any[] =
+          (await ext?.accounts?.get?.(true).catch(() => null)) ||
+          (await ext?.accounts?.get?.().catch(() => null)) ||
+          [];
+        const matched =
+          accts.find((a: any) => a?.type !== "ethereum" && a?.address) || accts[0];
+        const signAddr =
+          matched?.address || ss58Address || "5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni";
+        if (ext?.signer?.signRaw && matched?.type !== "ethereum") {
+          const payload = `PortalSentinel::revoke(account=${signAddr},token=${item.token},spender=${item.spender},allowance=0)`;
+          const hexData =
+            "0x" +
+            Array.from(new TextEncoder().encode(payload))
+              .map((b) => b.toString(16).padStart(2, "0"))
+              .join("");
+          await ext.signer.signRaw({
+            address: signAddr,
+            data: hexData,
+            type: "bytes",
+          });
         }
       }
 
@@ -806,7 +837,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                 onClick={connectWallet}
                 style={{ display: "inline-flex", alignItems: "center", gap: "6px", borderColor: "#78e9c4", color: "#78e9c4", cursor: "pointer", position: "relative", zIndex: 50 }}
               >
-                <Wallet size={12} /> {isConnectingWallet ? "CONNECTING..." : "CONNECT SUBWALLET"}
+                <Wallet size={12} /> {isConnectingWallet ? "APPROVE IN SUBWALLET..." : "CONNECT SUBWALLET"}
               </button>
             ) : isWrongNetwork ? (
               <button 
