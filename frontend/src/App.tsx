@@ -77,9 +77,9 @@ export default function App() {
   const [isArmingOnChain, setIsArmingOnChain] = useState(false);
   const [onChainRegisterHash, setOnChainRegisterHash] = useState<string>("");
   const [copiedSS58, setCopiedSS58] = useState(false);
-  const [ss58Address, setSs58Address] = useState("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni");
-  const [userAddress, setUserAddress] = useState("0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9");
-  const [emergencySafe, setEmergencySafe] = useState("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni");
+  const [ss58Address, setSs58Address] = useState("");
+  const [userAddress, setUserAddress] = useState("");
+  const [emergencySafe, setEmergencySafe] = useState("");
   const [defenseMode, setDefenseMode] = useState<"CONSERVATIVE" | "BALANCED" | "AGGRESSIVE">("BALANCED");
   
   // Granular Security Policy Studio State
@@ -270,9 +270,10 @@ export default function App() {
 
   const disconnectWallet = () => {
     setWalletConnected(false);
-    setSs58Address("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni");
-    setUserAddress("0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9");
-    setPotBalance("500.00");
+    setSs58Address("");
+    setUserAddress("");
+    setEmergencySafe("");
+    setPotBalance("0.000");
     addLog("[SUBWALLET] Disconnected wallet session.");
   };
 
@@ -475,16 +476,19 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
   // Live On-Chain Approvals Scanner
   const handleScanApprovals = async () => {
     setIsScanningApprovals(true);
-    addLog(`[SCANNER] Querying Portaldot V3 EVM RPC for active allowances on ${userAddress}...`);
+    const displayTarget = ss58Address || userAddress || "connected account";
+    const evmOwner = ethers.isAddress(userAddress)
+      ? userAddress
+      : "0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9";
+    addLog(`[SCANNER] Querying Portaldot V3 RPC for active allowances on ${displayTarget}...`);
 
     try {
-      let provider: ethers.Provider;
-      if (typeof window !== "undefined" && (window as any).ethereum) {
-        provider = new ethers.BrowserProvider((window as any).ethereum);
-      } else {
-        const staticNet = new ethers.Network("Portaldot V3 Testnet", 420420777);
-        provider = new ethers.JsonRpcProvider("https://test-evm-rpc-v3.portaldot.dev", staticNet, { staticNetwork: staticNet });
-      }
+      const staticNet = new ethers.Network("Portaldot V3 Testnet", 420420777);
+      const provider = new ethers.JsonRpcProvider(
+        "https://test-evm-rpc-v3.portaldot.dev",
+        staticNet,
+        { staticNetwork: staticNet }
+      );
 
       const updated = await Promise.all(
         approvals.map(async (item) => {
@@ -498,7 +502,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
               ],
               provider
             );
-            const rawAllowance = await erc20.allowance(userAddress, item.spender);
+            const rawAllowance = await erc20.allowance(evmOwner, item.spender);
             let displayAllowance = "0 " + item.tokenSymbol;
             let risk = 0;
             let status: "SAFE" | "SUSPICIOUS" | "CRITICAL" = "SAFE";
@@ -842,29 +846,9 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
             <a href="#approvals">APPROVALS SCANNER</a>
             <a href="#telegram">TELEGRAM ALERTS</a>
             <a href="#daemon">NODE OPS & TELEMETRY</a>
-            <a href="/pitch-deck.html" target="_blank" rel="noreferrer">PITCH DECK ↗</a>
             <a href="https://node-console.portaldot.dev/" target="_blank" rel="noreferrer">EXPLORER ↗</a>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <button
-              onClick={handleCopySS58}
-              title={`Copy Portaldot Testnet SS58: ${ss58Address}`}
-              className="mono"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                background: "rgba(255, 106, 26, 0.1)",
-                border: "1px solid rgba(255, 106, 26, 0.45)",
-                color: "#ff9b4d",
-                padding: "6px 10px",
-                fontSize: "10px",
-                cursor: "pointer"
-              }}
-            >
-              {copiedSS58 ? <Check size={11} color="#78e9c4" /> : <Copy size={11} />}
-              <span>SS58: {ss58Address.slice(0, 6)}...{ss58Address.slice(-4)}</span>
-            </button>
             {!walletConnected ? (
               <button 
                 className="outline-button launch" 
@@ -884,7 +868,9 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
             ) : (
               <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", background: "rgba(120, 233, 196, 0.08)", border: "1px solid rgba(120, 233, 196, 0.3)", padding: "6px 12px" }}>
                 <span className="mono" style={{ fontSize: "11px", color: "#78e9c4", fontWeight: "bold" }}>{potBalance} POT</span>
-                <span className="mono" style={{ fontSize: "11px", color: "#fff" }} title={ss58Address}>{ss58Address.slice(0, 6)}...{ss58Address.slice(-4)}</span>
+                <span className="mono" style={{ fontSize: "11px", color: "#fff" }} title={ss58Address || userAddress}>
+                  {(ss58Address || userAddress).slice(0, 6)}...{(ss58Address || userAddress).slice(-4)}
+                </span>
                 <button 
                   onClick={disconnectWallet} 
                   title="Disconnect Wallet"
@@ -1202,21 +1188,22 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
               <div style={{ background: "#060507", border: "1px solid var(--line)", padding: "14px", marginBottom: "20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                   <span className="mono" style={{ fontSize: "10px", color: "#dfbc97" }}>
-                    PORTALDOT TESTNET ACCOUNT (SS58) &amp; EMERGENCY COLD SAFE:
+                    REGISTERED EMERGENCY COLD SAFE (Sweep Invariant Target):
                   </span>
                   <span className="mono" style={{ fontSize: "9px", color: "#78e9c4" }}>
-                    SUBSTRATE SS58 → EVM H160 MAPPED (0x60ca...7Cf8 / 0xD604...19A9)
+                    MUTABLE ONLY BY WALLET OWNER
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
                   <input
                     type="text"
+                    placeholder="Connect SubWallet or enter cold safe address..."
                     value={emergencySafe}
                     onChange={(e) => setEmergencySafe(e.target.value)}
                     className="mono"
                     style={{ flex: 1, minWidth: "260px", background: "#110f13", border: "1px solid #30261e", color: "#fff", padding: "10px 12px", fontSize: "12px", outline: "none" }}
                   />
-                  <span className="badge-safe" style={{ padding: "8px 12px" }}>SS58 TESTNET SAFE</span>
+                  <span className="badge-safe" style={{ padding: "8px 12px" }}>USER-SET SAFE</span>
                 </div>
               </div>
 
@@ -1316,10 +1303,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                     <Search size={14} color="#dfbc97" /> LIVE ON-CHAIN ALLOWANCES & FIREWALL
                   </span>
                   <div className="mono" style={{ fontSize: "11px", color: "#8b8985", marginTop: "4px" }}>
-                    Portaldot Testnet SS58: <span style={{ color: "#ff9b4d", fontWeight: "bold" }}>{ss58Address}</span>
-                  </div>
-                  <div className="mono" style={{ fontSize: "11px", color: "#8b8985", marginTop: "2px" }}>
-                    Mapped EVM H160 Wallet: <span style={{ color: "#fff" }}>{userAddress}</span>
+                    Connected Wallet: <span style={{ color: "#fff" }}>{ss58Address || userAddress || "Not connected (click Connect SubWallet)"}</span>
                   </div>
                   <div className="mono" style={{ fontSize: "10px", color: "#dfbc97", marginTop: "4px" }}>
                     Default rows are sample data. Run a scan on the connected wallet to replace them with live allowances.
@@ -1971,13 +1955,6 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                 >
                   VERIFY ON PORTALDOT NODE CONSOLE ↗
                 </a>
-              </div>
-              <div className="mono" style={{ background: "rgba(255, 106, 26, 0.08)", border: "1px solid rgba(255, 106, 26, 0.35)", padding: "12px", marginBottom: "14px", fontSize: "11px" }}>
-                <div style={{ color: "#ff9b4d", fontWeight: "bold", marginBottom: "4px" }}>
-                  PORTALDOT V3 TESTNET DEPLOYER ACCOUNT (SUBSTRATE SS58 &amp; EVM H160):
-                </div>
-                <div style={{ color: "#fff", wordBreak: "break-all" }}>SS58: {ss58Address}</div>
-                <div style={{ color: "#8b8985", wordBreak: "break-all", fontSize: "10px", marginTop: "2px" }}>EVM H160 (pallet-revive): 0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9</div>
               </div>
               <div className="mono" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "12px", fontSize: "11px" }}>
                 <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "12px" }}>
