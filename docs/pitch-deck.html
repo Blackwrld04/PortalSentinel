@@ -381,7 +381,7 @@
       color: #fff;
     }
 
-    @media (max-width: 920px) {
+    @media screen and (max-width: 920px) {
       .slide {
         padding: 28px 24px;
         min-height: auto;
@@ -399,21 +399,43 @@
       }
     }
 
+    @page {
+      size: 11.67in 6.5625in;
+      margin: 0;
+    }
+
     @media print {
-      body {
-        background: #0e0e0e;
-        padding: 0;
+      html, body {
+        width: 1120px !important;
+        background: #0e0e0e !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       .deck-wrapper {
-        max-width: 100%;
-        gap: 0;
+        max-width: 1120px !important;
+        width: 1120px !important;
+        gap: 0 !important;
+        margin: 0 !important;
       }
       .slide {
-        min-height: 100vh;
-        border: none;
-        border-radius: 0;
-        box-shadow: none;
-        page-break-after: always;
+        width: 1120px !important;
+        height: 630px !important;
+        min-height: 630px !important;
+        max-height: 630px !important;
+        padding: 36px 48px !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .slide:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
       }
       .print-bar {
         display: none !important;
@@ -425,7 +447,8 @@
 
   <div class="print-bar">
     <a class="back-link" href="/">← Back to Live DApp</a>
-    <button class="print-btn" onclick="window.print()">Export / Save PDF</button>
+    <a class="print-btn" href="/PortalSentinel-Pitch-Deck.pdf" download="PortalSentinel-Pitch-Deck.pdf">⬇ Download PDF</a>
+    <button class="print-btn" style="background:#262626; border:1px solid rgba(255,255,255,0.2);" onclick="window.print()">Print Deck</button>
   </div>
 
   <div class="deck-wrapper">
