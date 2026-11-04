@@ -87,8 +87,7 @@ Even if the off-chain Guardian operator key is compromised, `DefenseExecutor.sol
 
 All 4 smart contracts are deployed, verified, and linked live on **Portaldot V3 Testnet** (`https://test-evm-rpc-v3.portaldot.dev`):
 
-- **Portaldot V3 Testnet Wallet Address (SubWallet SS58):** `5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`
-- **Mapped EVM H160 (`pallet-revive`):** `0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9`
+- **Portaldot V3 Testnet Wallet Address (Funded with Testnet POT in SubWallet):** `5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`
 
 | Contract | Portaldot V3 Testnet Address | Block | Deployment Transaction Hash |
 | :--- | :--- | :--- | :--- |

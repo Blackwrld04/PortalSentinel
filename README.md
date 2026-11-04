@@ -10,10 +10,92 @@
 [![Track: Node Operations & Tooling](https://img.shields.io/badge/DoraHacks-Track%203%20Tooling-orange.svg)](docs/DORAHACKS_SUBMISSION_KIT.md)
 [![Substrate Engine](https://img.shields.io/badge/Engine-pallet--revive%20%2F%20PolkaVM-black.svg)](https://node-console.portaldot.dev/)
 
+* **Portaldot V3 Testnet Wallet Address (SubWallet SS58):** `5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`
 * **Live Web3 DApp:** [https://portal-sentinel-pi.vercel.app/](https://portal-sentinel-pi.vercel.app/)
-* **Live Pitch Deck:** [https://portal-sentinel-pi.vercel.app/pitch-deck.html](https://portal-sentinel-pi.vercel.app/pitch-deck.html)
+* **Live Demo Video (02:21 with Voice-Over):** [https://portal-sentinel-pi.vercel.app/demo.mp4](https://portal-sentinel-pi.vercel.app/demo.mp4)
+* **Pitch Deck (9-Slide Widescreen PDF):** [https://portal-sentinel-pi.vercel.app/PortalSentinel-Pitch-Deck.pdf](https://portal-sentinel-pi.vercel.app/PortalSentinel-Pitch-Deck.pdf)
+* **Pitch Deck (Interactive HTML):** [https://portal-sentinel-pi.vercel.app/pitch-deck.html](https://portal-sentinel-pi.vercel.app/pitch-deck.html)
 * **Live Telemetry JSON API:** [https://portal-sentinel-pi.vercel.app/api/health](https://portal-sentinel-pi.vercel.app/api/health)
 * **Live Prometheus Metrics API:** [https://portal-sentinel-pi.vercel.app/api/metrics](https://portal-sentinel-pi.vercel.app/api/metrics)
+
+---
+
+## 🧪 How to Test PortalSentinel (Judge & Reviewer Guide)
+
+You can evaluate and verify every component of PortalSentinel either **instantly in your browser** (no local installation required) or **locally via CLI & Foundry**.
+
+### Part 1: 2-Minute Live Browser Test (https://portal-sentinel-pi.vercel.app/)
+
+1. **Connect SubWallet (`00:00 – 00:20`):**
+   - Open [https://portal-sentinel-pi.vercel.app/](https://portal-sentinel-pi.vercel.app/) in a browser with the **SubWallet** extension installed.
+   - Click **`CONNECT SUBWALLET`** in the top-right navigation bar.
+   - Approve the connection in the SubWallet extension popup. Your Portaldot V3 Testnet account (`5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`) and `500.00 POT` balance will appear in the header and auto-populate the **Emergency Cold Safe** field.
+2. **Run the 5-Stage Exploit & Defense Sandbox (`00:20 – 00:50`):**
+   - Scroll to **Section 01 — Interactive Exploit & Defense Sandbox** (`#sandbox`) and click **`RUN EXPLOIT & DEFENSE SANDBOX`**.
+   - Watch the 5-stage closed-loop decision pipeline step through:
+     1. `EXPLOIT TRIGGER` (`MockExploitFixture` `transferFrom` drain signal)
+     2. `THREAT DETECTION` (`Risk Score 100/100 >= Threshold`)
+     3. `GAS ESCALATION` (`1.35× → 1.60× → 1.85×` priority fee ladder)
+     4. `ATOMIC REVOCATION` (`DefenseExecutor.executeEmergencyBatchRevoke`)
+     5. `ALLOWANCE ZEROED` (compromised router allowance disarmed)
+3. **Calibrate & Sign an On-Chain Defense Policy in SubWallet (`00:50 – 01:15`):**
+   - Scroll to **Section 02 — Autonomous Circuit Breaker Policy Studio** (`#approvals`).
+   - Select a sensitivity mode (`CONSERVATIVE`, `BALANCED`, or `AGGRESSIVE`), choose a **Max Hourly Outflow Velocity** cap (`500 pUSD`, `1000 pUSD`, `5000 pUSD`, or `MAX`), and click **`[SAVE POLICY & ARM SHIELD (PORTALDOT V3 REGISTRY)]`**.
+   - Approve the cryptographic signature request in the **SubWallet** popup window to synchronize the policy with `SentinelRegistry.sol` (`0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF`).
+4. **Scan Live On-Chain Allowances on Portaldot V3 RPC (`01:15 – 01:35`):**
+   - In the **Live On-Chain Allowances & Firewall** table, click **`SCAN ON-CHAIN ALLOWANCES`**.
+   - The dashboard queries `https://test-evm-rpc-v3.portaldot.dev` (`Chain ID: 420420777`) for live `ERC20.allowance(owner, spender)` values on `MockERC20 (pUSD)` (`0x25da2DeD5b0Da07C160e021e0Df636988C3657f5`).
+   - Click **`REVOKE (0x0)`** on any row to sign a zero-allowance revocation in SubWallet.
+5. **Configure 24/7 Telegram Advisories & Inspect Live Node Telemetry (`01:35 – 02:00`):**
+   - In **Section 03 — 24/7 Telegram Push Notifications** (`#telegram`), enter your Telegram username and Chat ID (from `@PortalSentinel_Alerts_bot`) and click **`SAVE TELEGRAM CONFIG`**.
+   - In **Section 04 — Node Operations & Daemon Telemetry** (`#daemon`), inspect the **Dashboard Activity Log**, live **Portaldot V3 Block Height & RPC Roundtrip Latency**, and verify the live serverless endpoints at [`/api/health`](https://portal-sentinel-pi.vercel.app/api/health) and [`/api/metrics`](https://portal-sentinel-pi.vercel.app/api/metrics).
+
+---
+
+### Part 2: Run the Automated Test Suite Locally (27/27 Tests Passing)
+
+```bash
+git clone https://github.com/Blackwrld04/PortalSentinel.git
+cd PortalSentinel
+npm run build
+
+# 1. Run all 12 Foundry smart-contract unit & fuzz invariant tests (contracts/test/PortalSentinel.t.sol)
+npm run test:contracts
+
+# 2. Run all 15 daemon unit tests (ThreatScorer, defense planner, crash-safe block cursor journal)
+npm run test:unit
+```
+
+---
+
+### Part 3: Test Track 3 Node Operator CLI Against Live Portaldot V3 Testnet
+
+```bash
+# 1. Probe live Portaldot V3 EVM & Substrate RPC health, block height, and latency
+npm run cli:health
+
+# 2. Audit an account on Portaldot V3 Testnet for active ERC-20 token allowances & risk score
+cd daemon && npm run cli audit 0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9
+
+# 3. Run multi-sample RPC roundtrip latency benchmark (min / avg / p50 / p95 / max)
+npm run cli:benchmark
+
+# 4. Query live JSON /health and Prometheus /metrics telemetry
+npm run cli:metrics
+```
+
+---
+
+### Part 4: Verify Deployed Smart Contract Bytecode on Portaldot V3 RPC (`Chain ID: 420420777`)
+
+Run this single `curl` command from any terminal to verify that our deployed contracts are live on `https://test-evm-rpc-v3.portaldot.dev`:
+
+```bash
+# Verify SentinelRegistry.sol (0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF, Block #311022)
+curl -s -X POST https://test-evm-rpc-v3.portaldot.dev \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"eth_getCode","params":["0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF","latest"]}' | cut -c1-120
+```
 
 > **Production status:** this repository is being hardened from a hackathon demo into an
 > operator-grade service. See
