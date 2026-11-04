@@ -20,11 +20,23 @@
 * **GitHub Repository:** [Public GitHub Repo](https://github.com/blackwrld04/PortalSentinel)
 * **Live Demo URL:** `http://localhost:3002` (or public deploy)
 * **Explorer Links:** [Portaldot Node Console Explorer](https://node-console.portaldot.dev/)
-* **Contract Deployments:**
-  * `SentinelRegistry.sol` (Policy & Emergency Safe Store)
-  * `DefenseExecutor.sol` (Atomic Batch Revocation & Emergency Capital Sweep)
-  * `MockERC20.sol` (`pUSD` Asset Fixture)
-  * `MockExploitFixture.sol` (Reproducible Attack Simulator)
+* **Deployer & Guardian Account:**
+  * **Substrate SS58:** `5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`
+  * **EVM H160:** `0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9`
+* **Live Portaldot V3 Testnet Contract Deployments (`Chain ID: 420420777`):**
+  * **`SentinelRegistry.sol`** (Policy & Emergency Safe Store):
+    * **Address:** `0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF`
+    * **Tx Hash:** `0xcf77198f0b1666c4084441d61db60a39f6a07981a9c9605fb4341689ba48336c` (Block `#311022`)
+  * **`DefenseExecutor.sol`** (Atomic Batch Revocation & Emergency Capital Sweep):
+    * **Address:** `0x89c9510c4b3AeEE8792De383D251ef0b61d406E2`
+    * **Tx Hash:** `0x4cdd30974731623f7e9b2e25768d328669a4207ac5d0b7ea8aa0135ae31220f0` (Block `#311067`)
+    * **Registry Link Tx (`setDefenseExecutor`):** `0x9298f248fb8b53534ca7ae243331e162848ccbb36edbc66b4fba2971a181a0b4` (Block `#311068`)
+  * **`MockERC20.sol`** (`pUSD` Asset Fixture):
+    * **Address:** `0x25da2DeD5b0Da07C160e021e0Df636988C3657f5`
+    * **Tx Hash:** `0xf959f9ea03878c9ff0472ee3343f0c50c2be0a8fc119a41d6b83de2c250b515b` (Block `#311161`)
+  * **`MockExploitFixture.sol`** (Reproducible Attack Simulator):
+    * **Address:** `0xc44a87FE907E497E50ffF6913c0b863bd0758a90`
+    * **Tx Hash:** `0xcfdbdcf2d2807b19a5b8b00a5e4c0b7ee69cffd8e9df89be1c4e596a9fe1b941` (Block `#310782`)
 
 ---
 
@@ -99,7 +111,7 @@ PortalSentinel is a **closed-loop autonomous security firewall** built natively 
 * **Native POT Gas Optimization:**  
   All defense actions, priority fee escalations, and registry configurations utilize native `POT` tokens for gas.
 * **Dual Substrate & EVM Identity:**  
-  Seamlessly bridges the user's native Substrate SS58 identity (`5FKcVpYCBtCCaeGP6ZDTdhKGgbNibGLoEbFTGJzkZodXh6jV`) with their EVM MetaMask account (`0x4d5a5FC178916ED51Ec0a02E38028f47AC2f6E67`).
+  Seamlessly bridges the user's native Substrate SS58 identity (`5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`) with their EVM MetaMask account (`0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9`).
 
 ---
 

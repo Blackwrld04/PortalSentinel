@@ -68,8 +68,8 @@ export default function App() {
   const [isArmingOnChain, setIsArmingOnChain] = useState(false);
   const [onChainRegisterHash, setOnChainRegisterHash] = useState<string>("");
   const [copiedSS58, setCopiedSS58] = useState(false);
-  const ss58Address = "5FKcVpYCBtCCaeGP6ZDTdhKGgbNibGLoEbFTGJzkZodXh6jV";
-  const [userAddress, setUserAddress] = useState("0x4d5a5FC178916ED51Ec0a02E38028f47AC2f6E67");
+  const ss58Address = "5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni";
+  const [userAddress, setUserAddress] = useState("0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9");
   const [emergencySafe, setEmergencySafe] = useState("0x9378C531475Ffe51368f5a6e8790089eC8d9a27A");
   const [defenseMode, setDefenseMode] = useState<"CONSERVATIVE" | "BALANCED" | "AGGRESSIVE">("BALANCED");
   
@@ -123,16 +123,16 @@ export default function App() {
 
   const [approvals, setApprovals] = useState<ApprovalItem[]>([
     {
-      token: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      token: "0x25da2DeD5b0Da07C160e021e0Df636988C3657f5",
       tokenSymbol: "pUSD",
-      spender: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      spender: "0xc44a87FE907E497E50ffF6913c0b863bd0758a90",
       spenderName: "Compromised Router (MockExploitFixture)",
       allowance: "5,000 pUSD",
       riskScore: 98,
       status: "CRITICAL"
     },
     {
-      token: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      token: "0x25da2DeD5b0Da07C160e021e0Df636988C3657f5",
       tokenSymbol: "pUSD",
       spender: "0xa02EE16EB03d2cf1aeF199F7658FB8c8E3188ffd",
       spenderName: "BridgeZero Vault",
@@ -228,7 +228,7 @@ export default function App() {
 
   const disconnectWallet = () => {
     setWalletConnected(false);
-    setUserAddress("0x4d5a5FC178916ED51Ec0a02E38028f47AC2f6E67");
+    setUserAddress("0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9");
     setPotBalance("0.000");
     addLog("[WALLET] Disconnected browser wallet. Switched to sandbox demo address.");
   };
@@ -241,7 +241,7 @@ export default function App() {
         params: {
           type: "ERC20",
           options: {
-            address: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+            address: "0x25da2DeD5b0Da07C160e021e0Df636988C3657f5",
             symbol: "pUSD",
             decimals: 18,
           },
@@ -304,7 +304,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
       ];
 
       const registryContract = new ethers.Contract(
-        "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF",
         REGISTRY_ABI,
         signer
       );
@@ -402,7 +402,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                 displayAllowance = Number(ethers.formatUnits(rawAllowance, 18)).toLocaleString() + " " + item.tokenSymbol;
               }
 
-              if (item.spender.toLowerCase().includes("cf7ed") || item.spenderName.includes("Compromised")) {
+              if (item.spender.toLowerCase().includes("c44a87") || item.spender.toLowerCase().includes("cf7ed") || item.spenderName.includes("Compromised")) {
                 risk = 100;
                 status = "CRITICAL";
               } else {
@@ -587,7 +587,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
 
     addLog("[SIMULATION] Local walkthrough only — no transaction is broadcast.");
 
-    addLog("[ALERT] Exploit transaction detected! Router 0xCf7Ed... attempting 5,000 pUSD drain.");
+    addLog("[ALERT] Exploit transaction detected! Router 0xc44a87... attempting 5,000 pUSD drain.");
 
     // Step 2: Threat Evaluation
     await new Promise((r) => setTimeout(r, 1100));
@@ -637,16 +637,16 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
     setSimStep(0);
     setApprovals([
       {
-        token: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+        token: "0x25da2DeD5b0Da07C160e021e0Df636988C3657f5",
         tokenSymbol: "pUSD",
-        spender: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        spender: "0xc44a87FE907E497E50ffF6913c0b863bd0758a90",
         spenderName: "Compromised Router (MockExploitFixture)",
         allowance: "5,000 pUSD",
         riskScore: 98,
         status: "CRITICAL"
       },
       {
-        token: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+        token: "0x25da2DeD5b0Da07C160e021e0Df636988C3657f5",
         tokenSymbol: "pUSD",
         spender: "0xa02EE16EB03d2cf1aeF199F7658FB8c8E3188ffd",
         spenderName: "BridgeZero Vault",
@@ -698,6 +698,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
             <a href="#approvals">APPROVALS SCANNER</a>
             <a href="#telegram">TELEGRAM ALERTS</a>
             <a href="#daemon">NODE OPS & TELEMETRY</a>
+            <a href="/pitch-deck.html" target="_blank" rel="noreferrer">PITCH DECK ↗</a>
             <a href="https://node-console.portaldot.dev/" target="_blank" rel="noreferrer">EXPLORER ↗</a>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1787,6 +1788,46 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                 </div>
               </div>
 
+            </div>
+
+            {/* Live Deployed Smart Contracts on Portaldot V3 Testnet */}
+            <div className="sentinel-card sentinel-card-orange" style={{ marginTop: "25px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "15px", borderBottom: "1px solid var(--line)", paddingBottom: "12px" }}>
+                <span className="mono" style={{ fontSize: "12px", color: "#dfbc97", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <ShieldCheck size={14} color="#78e9c4" /> VERIFIED PORTALDOT V3 TESTNET DEPLOYMENTS (CHAIN ID: 420420777)
+                </span>
+                <a
+                  href="https://node-console.portaldot.dev/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mono"
+                  style={{ fontSize: "10px", color: "#78e9c4", textDecoration: "none", border: "1px solid rgba(120, 233, 196, 0.3)", padding: "4px 10px", background: "rgba(120, 233, 196, 0.08)" }}
+                >
+                  VERIFY ON PORTALDOT NODE CONSOLE ↗
+                </a>
+              </div>
+              <div className="mono" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "12px", fontSize: "11px" }}>
+                <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "12px" }}>
+                  <strong style={{ color: "#fff", display: "block", marginBottom: "4px" }}>SentinelRegistry.sol (Block #311022)</strong>
+                  <div style={{ color: "#78e9c4", wordBreak: "break-all", fontSize: "10px" }}>Address: 0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF</div>
+                  <div style={{ color: "#8b8985", wordBreak: "break-all", fontSize: "9px", marginTop: "4px" }}>Tx: 0xcf77198f0b1666c4084441d61db60a39f6a07981a9c9605fb4341689ba48336c</div>
+                </div>
+                <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "12px" }}>
+                  <strong style={{ color: "#fff", display: "block", marginBottom: "4px" }}>DefenseExecutor.sol (Block #311067)</strong>
+                  <div style={{ color: "#78e9c4", wordBreak: "break-all", fontSize: "10px" }}>Address: 0x89c9510c4b3AeEE8792De383D251ef0b61d406E2</div>
+                  <div style={{ color: "#8b8985", wordBreak: "break-all", fontSize: "9px", marginTop: "4px" }}>Tx: 0x4cdd30974731623f7e9b2e25768d328669a4207ac5d0b7ea8aa0135ae31220f0</div>
+                </div>
+                <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "12px" }}>
+                  <strong style={{ color: "#fff", display: "block", marginBottom: "4px" }}>MockERC20.sol — pUSD (Block #311161)</strong>
+                  <div style={{ color: "#ff8638", wordBreak: "break-all", fontSize: "10px" }}>Address: 0x25da2DeD5b0Da07C160e021e0Df636988C3657f5</div>
+                  <div style={{ color: "#8b8985", wordBreak: "break-all", fontSize: "9px", marginTop: "4px" }}>Tx: 0xf959f9ea03878c9ff0472ee3343f0c50c2be0a8fc119a41d6b83de2c250b515b</div>
+                </div>
+                <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "12px" }}>
+                  <strong style={{ color: "#fff", display: "block", marginBottom: "4px" }}>MockExploitFixture.sol (Block #310782)</strong>
+                  <div style={{ color: "#ff8638", wordBreak: "break-all", fontSize: "10px" }}>Address: 0xc44a87FE907E497E50ffF6913c0b863bd0758a90</div>
+                  <div style={{ color: "#8b8985", wordBreak: "break-all", fontSize: "9px", marginTop: "4px" }}>Tx: 0xcfdbdcf2d2807b19a5b8b00a5e4c0b7ee69cffd8e9df89be1c4e596a9fe1b941</div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
