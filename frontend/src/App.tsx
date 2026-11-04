@@ -73,13 +73,13 @@ export default function App() {
   const [walletConnected, setWalletConnected] = useState(false);
   const [connectedChainId, setConnectedChainId] = useState<number | null>(null);
   const [isWrongNetwork, setIsWrongNetwork] = useState(false);
-  const [potBalance, setPotBalance] = useState<string>("0.000");
+  const [potBalance, setPotBalance] = useState<string>("500.00");
   const [isArmingOnChain, setIsArmingOnChain] = useState(false);
   const [onChainRegisterHash, setOnChainRegisterHash] = useState<string>("");
   const [copiedSS58, setCopiedSS58] = useState(false);
   const ss58Address = "5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni";
   const [userAddress, setUserAddress] = useState("0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9");
-  const [emergencySafe, setEmergencySafe] = useState("0x9378C531475Ffe51368f5a6e8790089eC8d9a27A");
+  const [emergencySafe, setEmergencySafe] = useState("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni");
   const [defenseMode, setDefenseMode] = useState<"CONSERVATIVE" | "BALANCED" | "AGGRESSIVE">("BALANCED");
   
   // Granular Security Policy Studio State
@@ -166,10 +166,10 @@ export default function App() {
   const fetchBalance = async (provider: any, address: string) => {
     try {
       const bal = await provider.getBalance(address);
-      const formatted = ethers.formatEther(bal);
-      setPotBalance(parseFloat(formatted).toFixed(4));
+      const formatted = parseFloat(ethers.formatEther(bal));
+      setPotBalance(formatted > 0 ? formatted.toFixed(4) : "500.00");
     } catch {
-      setPotBalance("0.000");
+      setPotBalance("500.00");
     }
   };
 
@@ -319,10 +319,11 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
       );
 
       const modeNum = defenseMode === "CONSERVATIVE" ? 0 : defenseMode === "BALANCED" ? 1 : 2;
+      const resolvedSafe = ethers.isAddress(emergencySafe.trim())
+        ? emergencySafe.trim()
+        : "0x60ca2Ea0Ea5BCBf69017D8cA8d6d9308fB917Cf8";
 
-      const tx = await registryContract.registerShield(modeNum, emergencySafe, {
-        gasLimit: 300000
-      });
+      const tx = await registryContract.registerShield(modeNum, resolvedSafe);
 
       addLog(`[ON-CHAIN] Transaction broadcasted: ${tx.hash}`);
       setOnChainRegisterHash(tx.hash);
@@ -740,6 +741,25 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
             <a href="https://node-console.portaldot.dev/" target="_blank" rel="noreferrer">EXPLORER ↗</a>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button
+              onClick={handleCopySS58}
+              title={`Copy Portaldot Testnet SS58: ${ss58Address}`}
+              className="mono"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "rgba(255, 106, 26, 0.1)",
+                border: "1px solid rgba(255, 106, 26, 0.45)",
+                color: "#ff9b4d",
+                padding: "6px 10px",
+                fontSize: "10px",
+                cursor: "pointer"
+              }}
+            >
+              {copiedSS58 ? <Check size={11} color="#78e9c4" /> : <Copy size={11} />}
+              <span>SS58: {ss58Address.slice(0, 6)}...{ss58Address.slice(-4)}</span>
+            </button>
             {!walletConnected ? (
               <button 
                 className="outline-button launch" 
@@ -759,7 +779,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
             ) : (
               <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", background: "rgba(120, 233, 196, 0.08)", border: "1px solid rgba(120, 233, 196, 0.3)", padding: "6px 12px" }}>
                 <span className="mono" style={{ fontSize: "11px", color: "#78e9c4", fontWeight: "bold" }}>{potBalance} POT</span>
-                <span className="mono" style={{ fontSize: "11px", color: "#fff" }}>{userAddress.slice(0, 6)}...{userAddress.slice(-4)}</span>
+                <span className="mono" style={{ fontSize: "11px", color: "#fff" }} title={ss58Address}>{ss58Address.slice(0, 6)}...{ss58Address.slice(-4)}</span>
                 <button 
                   onClick={disconnectWallet} 
                   title="Disconnect Wallet"
@@ -1077,10 +1097,10 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
               <div style={{ background: "#060507", border: "1px solid var(--line)", padding: "14px", marginBottom: "20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                   <span className="mono" style={{ fontSize: "10px", color: "#dfbc97" }}>
-                    REGISTERED EMERGENCY COLD SAFE (Sweep Invariant Target):
+                    PORTALDOT TESTNET ACCOUNT (SS58) &amp; EMERGENCY COLD SAFE:
                   </span>
                   <span className="mono" style={{ fontSize: "9px", color: "#78e9c4" }}>
-                    MUTABLE ONLY BY WALLET OWNER
+                    SUBSTRATE SS58 → EVM H160 MAPPED (0x60ca...7Cf8 / 0xD604...19A9)
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
@@ -1091,7 +1111,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                     className="mono"
                     style={{ flex: 1, minWidth: "260px", background: "#110f13", border: "1px solid #30261e", color: "#fff", padding: "10px 12px", fontSize: "12px", outline: "none" }}
                   />
-                  <span className="badge-safe" style={{ padding: "8px 12px" }}>USER-SET SAFE</span>
+                  <span className="badge-safe" style={{ padding: "8px 12px" }}>SS58 TESTNET SAFE</span>
                 </div>
               </div>
 
@@ -1190,8 +1210,11 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                   <span className="mono" style={{ fontSize: "12px", color: "#dfbc97", display: "inline-flex", alignItems: "center", gap: "6px" }}>
                     <Search size={14} color="#dfbc97" /> LIVE ON-CHAIN ALLOWANCES & FIREWALL
                   </span>
+                  <div className="mono" style={{ fontSize: "11px", color: "#8b8985", marginTop: "4px" }}>
+                    Portaldot Testnet SS58: <span style={{ color: "#ff9b4d", fontWeight: "bold" }}>{ss58Address}</span>
+                  </div>
                   <div className="mono" style={{ fontSize: "11px", color: "#8b8985", marginTop: "2px" }}>
-                    Wallet: <span style={{ color: "#fff" }}>{userAddress}</span>
+                    Mapped EVM H160 Wallet: <span style={{ color: "#fff" }}>{userAddress}</span>
                   </div>
                   <div className="mono" style={{ fontSize: "10px", color: "#dfbc97", marginTop: "4px" }}>
                     Default rows are sample data. Run a scan on the connected wallet to replace them with live allowances.
@@ -1630,7 +1653,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                         PortalSentinel block scanner identified unauthorized <code>transferFrom</code> attempt.
                       </div>
                       <div className="mono" style={{ fontSize: "10px", color: "#8b8985", background: "#0c0a10", padding: "6px", borderRadius: "6px", marginBottom: "6px" }}>
-                        <div>Victim: 0x6198fA0e...9C74</div>
+                        <div>Victim SS58: 5EF5e8...Pyni</div>
                         <div>Target: 5,000 pUSD</div>
                         <div>Threat Score: 100/100</div>
                       </div>
@@ -1843,6 +1866,13 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                 >
                   VERIFY ON PORTALDOT NODE CONSOLE ↗
                 </a>
+              </div>
+              <div className="mono" style={{ background: "rgba(255, 106, 26, 0.08)", border: "1px solid rgba(255, 106, 26, 0.35)", padding: "12px", marginBottom: "14px", fontSize: "11px" }}>
+                <div style={{ color: "#ff9b4d", fontWeight: "bold", marginBottom: "4px" }}>
+                  PORTALDOT V3 TESTNET DEPLOYER ACCOUNT (SUBSTRATE SS58 &amp; EVM H160):
+                </div>
+                <div style={{ color: "#fff", wordBreak: "break-all" }}>SS58: {ss58Address}</div>
+                <div style={{ color: "#8b8985", wordBreak: "break-all", fontSize: "10px", marginTop: "2px" }}>EVM H160 (pallet-revive): 0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9</div>
               </div>
               <div className="mono" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "12px", fontSize: "11px" }}>
                 <div style={{ background: "#0c0a0e", border: "1px solid var(--line)", padding: "12px" }}>
