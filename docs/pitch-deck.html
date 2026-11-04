@@ -6,17 +6,21 @@
   <title>PortalSentinel — Pitch Deck (Portaldot Hacker House 2026)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #070608;
-      --card-bg: #0f0d13;
-      --accent-orange: #ff6a1a;
-      --accent-glow: #ff8638;
-      --accent-teal: #78e9c4;
-      --text: #ffffff;
-      --text-muted: #9f9b93;
-      --line: rgba(255, 106, 26, 0.2);
+      --outer-bg: #242424;
+      --slide-bg: #111111;
+      --card-dark: #1c1c1c;
+      --card-dark-2: #171717;
+      --card-border: rgba(255, 255, 255, 0.09);
+      --orange-bright: #ff5e00;
+      --orange-mid: #d94600;
+      --orange-deep: #6b2200;
+      --text-white: #ffffff;
+      --text-secondary: #b5b5b5;
+      --text-muted: #808080;
+      --hairline: rgba(255, 255, 255, 0.14);
     }
 
     * {
@@ -26,216 +30,373 @@
     }
 
     body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: 'Space Grotesk', sans-serif;
-      overflow-x: hidden;
+      background-color: var(--outer-bg);
+      color: var(--text-white);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      padding: 48px 20px 100px;
     }
 
-    .slide-deck {
-      max-width: 1000px;
+    .deck-wrapper {
+      max-width: 1120px;
       margin: 0 auto;
-      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 44px;
     }
 
+    /* 16:9 Executive Slide Board */
     .slide {
-      background: var(--card-bg);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 50px 60px;
-      margin-bottom: 50px;
-      min-height: 580px;
+      background:
+        radial-gradient(circle at 88% 8%, rgba(255, 110, 32, 0.14) 0%, rgba(255, 110, 32, 0) 36%),
+        radial-gradient(circle at 48% 102%, rgba(255, 120, 40, 0.12) 0%, rgba(255, 120, 40, 0) 42%),
+        linear-gradient(180deg, #141414 0%, #0e0e0e 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      padding: 42px 54px;
+      min-height: 630px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       position: relative;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.65);
       page-break-after: always;
     }
 
-    .slide::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      background: linear-gradient(90deg, var(--accent-orange), var(--accent-teal));
-    }
-
-    .slide-header {
+    /* Top & Bottom Chrome (Consilio Style) */
+    .slide-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding-bottom: 15px;
-      margin-bottom: 30px;
+      position: relative;
+      z-index: 2;
     }
 
-    .slide-tag {
-      font-family: 'JetBrains Mono', monospace;
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-white);
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+    }
+
+    .slide-year {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-white);
+    }
+
+    .slide-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      position: relative;
+      z-index: 2;
+      margin-top: 24px;
+    }
+
+    .slide-footnote {
       font-size: 11px;
-      color: var(--accent-glow);
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      color: var(--text-muted);
+      letter-spacing: 0.01em;
     }
 
     .slide-num {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    h1 {
-      font-size: 42px;
-      line-height: 1.1;
+      font-size: 14px;
       font-weight: 700;
-      margin-bottom: 16px;
-      background: linear-gradient(135deg, #fff 60%, var(--accent-glow));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--text-white);
+      margin-left: auto;
     }
 
-    h2 {
-      font-size: 32px;
-      margin-bottom: 24px;
-      color: #fff;
-    }
-
-    p.lead {
-      font-size: 18px;
-      line-height: 1.5;
-      color: var(--text-muted);
-      margin-bottom: 24px;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-top: 20px;
-    }
-
-    .grid-3 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 18px;
-      margin-top: 20px;
-    }
-
-    .box {
-      background: #09080c;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 22px;
-      border-radius: 6px;
-    }
-
-    .box.highlight {
-      border-color: rgba(255, 106, 26, 0.35);
-      background: rgba(255, 106, 26, 0.03);
-    }
-
-    .box.teal {
-      border-color: rgba(120, 233, 196, 0.35);
-      background: rgba(120, 233, 196, 0.03);
-    }
-
-    .box h3 {
-      font-size: 16px;
-      color: #fff;
-      margin-bottom: 10px;
-      display: flex;
+    /* Signature Orange Gradient Pill Badge */
+    .pill {
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
-    }
-
-    .box p {
+      justify-content: center;
+      padding: 7px 22px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ff5e00 0%, #9e3600 68%, rgba(255, 94, 0, 0.12) 100%);
+      border: 1px solid rgba(255, 120, 45, 0.55);
+      color: #ffffff;
       font-size: 13px;
-      color: var(--text-muted);
-      line-height: 1.6;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      vertical-align: middle;
+      box-shadow: 0 4px 18px rgba(255, 94, 0, 0.22);
     }
 
-    .metric-val {
+    /* Display Typography */
+    .display-xl {
+      font-size: 56px;
+      line-height: 1.08;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: var(--text-white);
+    }
+
+    .display-lg {
+      font-size: 44px;
+      line-height: 1.12;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: var(--text-white);
+    }
+
+    .headline-rule {
+      display: inline-block;
+      width: 110px;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.28);
+      vertical-align: middle;
+      margin-left: 16px;
+    }
+
+    .subhead {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-white);
+      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+
+    .body-copy {
+      font-size: 13.5px;
+      line-height: 1.62;
+      color: var(--text-secondary);
+    }
+
+    .mono {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 36px;
+    }
+
+    /* Cards: Dark Matte & Signature Orange Gradient */
+    .card-dark {
+      background: linear-gradient(145deg, #1e1e1e 0%, #141414 100%);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px 26px;
+      position: relative;
+    }
+
+    .card-orange {
+      background: linear-gradient(135deg, #ff6200 0%, #d84300 52%, #3a1605 100%);
+      border: 1px solid rgba(255, 146, 84, 0.45);
+      border-radius: 12px;
+      padding: 24px 26px;
+      position: relative;
+      box-shadow: 0 16px 36px rgba(255, 94, 0, 0.18);
+    }
+
+    .stat-num {
+      font-size: 38px;
       font-weight: 700;
-      color: var(--accent-teal);
+      letter-spacing: -0.03em;
+      color: var(--text-white);
+      line-height: 1.05;
       margin-bottom: 6px;
     }
 
-    .metric-val.orange {
-      color: var(--accent-glow);
+    .stat-label {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.82);
+      font-weight: 400;
     }
 
-    .slide-footer {
+    /* Visual Portrait / Schematic Frame (Slides 1 & 4) */
+    .visual-frame {
+      background: linear-gradient(160deg, #1d1d1d 0%, #111111 100%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 26px;
       display: flex;
+      flex-direction: column;
       justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .visual-frame::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 75% 20%, rgba(255, 94, 0, 0.16), transparent 55%);
+      pointer-events: none;
+    }
+
+    /* Client / Proof Counter Pill (Slide 1) */
+    .counter-row {
+      display: flex;
       align-items: center;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      padding-top: 15px;
-      margin-top: 30px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--text-muted);
+      gap: 14px;
+      margin-bottom: 16px;
     }
 
-    .badge {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 4px;
+    .counter-pill {
+      display: inline-flex;
+      align-items: center;
+      background: linear-gradient(90deg, #262626 0%, #ff5e00 100%);
+      border: 1px solid rgba(255, 120, 45, 0.5);
+      border-radius: 999px;
+      padding: 4px 14px 4px 6px;
+      gap: 8px;
+    }
+
+    .avatar-stack {
+      display: flex;
+      align-items: center;
+    }
+
+    .avatar-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #151515;
+      border: 1.5px solid #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       font-size: 10px;
-      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      margin-right: -6px;
+      color: #fff;
     }
 
-    .badge-orange {
-      background: rgba(255, 106, 26, 0.15);
-      color: var(--accent-glow);
-      border: 1px solid rgba(255, 106, 26, 0.3);
+    .counter-val {
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+      padding-left: 6px;
     }
 
-    .badge-teal {
-      background: rgba(120, 233, 196, 0.15);
-      color: var(--accent-teal);
-      border: 1px solid rgba(120, 233, 196, 0.3);
+    /* Slide 3 & 7 List Rows with Orange / White Dots */
+    .challenge-list {
+      display: flex;
+      flex-direction: column;
     }
 
+    .challenge-item {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 16px;
+      align-items: start;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .challenge-item:first-child {
+      padding-top: 4px;
+    }
+
+    .dot-orange,
+    .dot-white {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      margin-top: 3px;
+    }
+
+    .dot-orange {
+      background: var(--orange-bright);
+      box-shadow: 0 0 14px rgba(255, 94, 0, 0.55);
+    }
+
+    .dot-white {
+      background: #ffffff;
+    }
+
+    .challenge-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-white);
+      margin-bottom: 4px;
+    }
+
+    .challenge-desc {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+    }
+
+    /* Floating Print / Action Bar */
     .print-bar {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: var(--card-bg);
-      border: 1px solid var(--accent-orange);
+      bottom: 22px;
+      right: 24px;
+      background: #161616;
+      border: 1px solid rgba(255, 94, 0, 0.55);
       padding: 10px 18px;
-      border-radius: 30px;
+      border-radius: 999px;
       display: flex;
       gap: 12px;
       align-items: center;
       z-index: 999;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
     }
 
     .print-btn {
-      background: var(--accent-orange);
+      background: linear-gradient(90deg, #ff5e00, #c83e00);
       color: #fff;
       border: none;
       padding: 8px 16px;
-      border-radius: 20px;
-      font-family: 'Space Grotesk', sans-serif;
+      border-radius: 999px;
+      font-family: inherit;
       font-weight: 600;
       font-size: 12px;
       cursor: pointer;
+      text-decoration: none;
+    }
+
+    .back-link {
+      color: var(--text-secondary);
+      font-size: 12px;
+      text-decoration: none;
+      padding: 4px 8px;
+    }
+
+    .back-link:hover {
+      color: #fff;
+    }
+
+    @media (max-width: 920px) {
+      .slide {
+        padding: 28px 24px;
+        min-height: auto;
+      }
+      .display-xl {
+        font-size: 36px;
+      }
+      .display-lg {
+        font-size: 30px;
+      }
+      .responsive-2col,
+      .responsive-stagger,
+      .responsive-4col {
+        grid-template-columns: 1fr !important;
+      }
     }
 
     @media print {
       body {
-        background: #000;
-      }
-      .slide-deck {
-        max-width: 100%;
+        background: #0e0e0e;
         padding: 0;
       }
+      .deck-wrapper {
+        max-width: 100%;
+        gap: 0;
+      }
       .slide {
-        margin: 0;
         min-height: 100vh;
         border: none;
         border-radius: 0;
@@ -251,314 +412,644 @@
 <body>
 
   <div class="print-bar">
-    <span style="font-size: 12px; color: #fff;">Portaldot Hacker House 2026</span>
-    <button class="print-btn" onclick="window.print()">Export / Print to PDF</button>
+    <a class="back-link" href="/">← Back to Live DApp</a>
+    <button class="print-btn" onclick="window.print()">Export / Save PDF</button>
   </div>
 
-  <div class="slide-deck">
+  <div class="deck-wrapper">
 
-    <!-- SLIDE 1: COVER -->
-    <div class="slide">
-      <div class="slide-header">
-        <span class="slide-tag">Portaldot Hacker House 2026 · DoraHacks</span>
-        <span class="slide-num">01 / 09</span>
+    <!-- =======================================================================
+         SLIDE 01: HERO COVER (Matches Reference Slide 1 Layout)
+         ======================================================================= -->
+    <section class="slide">
+      <div class="slide-top">
+        <a href="https://portal-sentinel-pi.vercel.app" class="brand">
+          <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 3L2 20h20L12 3z" stroke="#ffffff"/>
+            <circle cx="12" cy="14" r="2.2" fill="#ff5e00" stroke="none"/>
+          </svg>
+          PortalSentinel
+        </a>
+        <span class="slide-year">2026</span>
       </div>
-      <div>
-        <div style="margin-bottom: 20px;">
-          <span class="badge badge-orange">TRACK 3: NODE OPERATIONS & TOOLING</span>
-        </div>
-        <h1>PortalSentinel</h1>
-        <p class="lead" style="font-size: 22px; color: #fff; max-width: 800px;">
-          Autonomous Closed-Loop Security Firewall & Circuit Breaker for Portaldot V3 EVM.
-        </p>
-        <p style="color: var(--text-muted); font-size: 15px; margin-top: 15px;">
-          Reacts to a configured drain signal, attempts an on-chain defense, and sends Telegram advisories via <code style="color: var(--accent-glow);">pallet-revive</code> RISC-V PolkaVM. The current P0 detection path is block-poll based; see the production hardening plan for scope.
-        </p>
-        <div class="badge badge-orange" style="margin-top: 18px; background: rgba(255,106,26,0.12); color: #ffb067;">
-          PROTOTYPE — HARDENING IN PROGRESS · FIGURES BELOW ARE DESIGN TARGETS, NOT MEASUREMENTS
-        </div>
-      </div>
-      <div class="slide-footer">
-        <span>Team: PortalSentinel Core</span>
-        <span>Network: Portaldot V3 Testnet (Chain ID 420420777)</span>
-      </div>
-    </div>
 
-    <!-- SLIDE 2: THE PROBLEM -->
-    <div class="slide">
-      <div class="slide-header">
-        <span class="slide-tag">The Vulnerability</span>
-        <span class="slide-num">02 / 09</span>
-      </div>
-      <div>
-        <h2>The Multi-Billion Dollar Approval Dilemma</h2>
-        <p class="lead">
-          DeFi users routinely sign "Unlimited Allowances" (<code style="color: var(--accent-glow);">type(uint256).max</code>) to trade on DEXs and lend in vaults. When a protocol router is compromised, attackers drain user wallets via <code style="color: var(--accent-glow);">transferFrom</code> in under 30 seconds.
-        </p>
-        <div class="grid-3">
-          <div class="box">
-            <h3 style="color: #ff6a1a;">1. Human Latency Gap</h3>
-            <p>Users are asleep or away from their keyboard. A manual revoke requires noticing the attack, visiting a revoke UI, connecting a wallet, and signing a transaction—taking minutes or hours.</p>
-          </div>
-          <div class="box">
-            <h3 style="color: #ff8638;">2. Oracle Lag (15-45s)</h3>
-            <p>Decentralized Oracle Networks (Chainlink CRE, etc.) require multi-block Byzantine consensus. By the time nodes agree an attack happened, the attacker already finalized the drain.</p>
-          </div>
-          <div class="box">
-            <h3 style="color: #ffb067;">3. The ERC-20 Flaw</h3>
-            <p>Standard ERC-20 tokens (like USDC/USDT) cannot be revoked by a third party. Naive revokers silently fail when an attacker drains standard tokens.</p>
-          </div>
-        </div>
-      </div>
-      <div class="slide-footer">
-        <span>Problem: Passive alerts are too late. Active sub-second defense is required.</span>
-      </div>
-    </div>
+      <div class="responsive-2col" style="display: grid; grid-template-columns: 1.25fr 0.85fr; gap: 42px; align-items: center; margin: auto 0;">
+        <div>
+          <h1 class="display-xl" style="margin-bottom: 36px;">
+            Transforming<br>
+            Block Speed <span class="pill" style="margin-left: 10px; transform: translateY(-4px);">Track 3 · Tooling</span><br>
+            into Defense <span class="headline-rule"></span>
+          </h1>
 
-    <!-- SLIDE 3: THE SOLUTION -->
-    <div class="slide">
-      <div class="slide-header">
-        <span class="slide-tag">The Solution</span>
-        <span class="slide-num">03 / 09</span>
-      </div>
-      <div>
-        <h2>Autonomous Closed-Loop Defense Firewall</h2>
-        <p class="lead">
-          PortalSentinel aims to shorten the gap between detection and an on-chain defensive response.
-        </p>
-        <div class="grid-2">
-          <div class="box highlight">
-            <div class="metric-val">1.35–1.85×</div>
-            <h3>Priority Fee Escalation</h3>
-            <p>The daemon polls Portaldot V3 EVM blocks and, on a confirmed threat (score ≥ 60), broadcasts an emergency defense transaction with a 1.35× priority fee multiplier, rising on retries. Higher fees improve inclusion odds but do not guarantee ordering ahead of the attacker.</p>
+          <div class="counter-row">
+            <div class="counter-pill">
+              <div class="avatar-stack">
+                <span class="avatar-dot">⛨</span>
+                <span class="avatar-dot" style="background:#ff5e00;">⚡</span>
+                <span class="avatar-dot">🔒</span>
+              </div>
+              <span class="counter-val">4 Contracts</span>
+            </div>
+            <span style="font-size: 16px; font-weight: 500; color: #fff;">Live on Portaldot V3 Testnet</span>
           </div>
-          <div class="box teal">
-            <div class="metric-val" style="color: var(--accent-teal);">12/12</div>
-            <h3>Dual-Defense Architecture</h3>
-            <p>Combines <strong>Atomic Batch Revocation</strong> (zeroing allowances and verifying the result) with <strong>Emergency Capital Sweep</strong> (<code style="color: var(--accent-teal);">executeEmergencySweep</code>), which moves remaining standard ERC-20 tokens into the user's cold vault. Internal Foundry tests, not an external audit.</p>
-          </div>
-        </div>
-      </div>
-      <div class="slide-footer">
-        <span>Closed Loop: Detection → Scoring → Fee Escalation → Revocation / Sweep</span>
-      </div>
-    </div>
 
-    <!-- SLIDE 4: ZERO-CUSTODY INVARIANT -->
-    <div class="slide">
-      <div class="slide-header">
-        <span class="slide-tag">Security & Trust</span>
-        <span class="slide-num">04 / 09</span>
-      </div>
-      <div>
-        <h2>Zero-Custody Smart Contract Invariant</h2>
-        <p class="lead">
-          How can users trust the Sentinel Guardian operator? Because the smart contract makes token theft mathematically impossible.
-        </p>
-        <div class="box highlight" style="margin-bottom: 20px;">
-          <h3 style="color: var(--accent-teal);">Strict Invariant: Funds Can NEVER Go to the Guardian</h3>
-          <p style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #fff;">
-            require(coldSafe != guardian, "Zero-custody invariant violated");<br>
-            IERC20(tokens[i]).transferFrom(user, coldSafe, balance);
+          <p class="body-copy" style="max-width: 500px;">
+            PortalSentinel is an autonomous closed-loop security firewall and block-level circuit breaker built natively for Portaldot V3 EVM (<code class="mono" style="color:#fff;">pallet-revive</code> RISC-V PolkaVM), combining priority-fee defense with 24/7 Telegram mobile advisories.
           </p>
         </div>
-        <div class="grid-3">
-          <div class="box">
-            <h3>Immutable Cold Safe</h3>
-            <p>Capital can only ever be moved to the user's pre-configured emergency cold vault stored in <code style="color: #fff;">SentinelRegistry.sol</code>.</p>
-          </div>
-          <div class="box">
-            <h3>Zero Financial Downside</h3>
-            <p>Zeroing allowances (<code style="color: #fff;">approve(spender, 0)</code>) strips exploit rights without spending user tokens.</p>
-          </div>
-          <div class="box">
-            <h3>12/12 Foundry Tests Passing</h3>
-            <p>Internal unit and invariant tests verifying that rogue callers, invalid safes, paused registries, and empty sweeps are rejected.</p>
-          </div>
-        </div>
-      </div>
-      <div class="slide-footer">
-        <span>Non-custodial by mathematical design. Built with Foundry on Solidity 0.8.24.</span>
-      </div>
-    </div>
 
-    <!-- SLIDE 5: WHY PORTALDOT V3 -->
-    <div class="slide">
-      <div class="slide-header">
-        <span class="slide-tag">Core Infrastructure</span>
-        <span class="slide-num">05 / 09</span>
-      </div>
-      <div>
-        <h2>Why Portaldot V3 (<code style="color: var(--accent-glow);">pallet-revive</code>) Is Essential</h2>
-        <p class="lead">
-          PortalSentinel cannot exist on standard 12-second EVM networks. It is purpose-built to exploit Portaldot V3's architecture.
-        </p>
-        <div class="grid-3">
-          <div class="box highlight">
-            <div class="metric-val orange">~1,000ms</div>
-            <h3>Sub-Second Block Time</h3>
-            <p>Fast finality allows our daemon to detect, evaluate, and inject defense transactions in milliseconds before attack blocks finalize.</p>
+        <!-- Right Framed Visual Card -->
+        <div class="visual-frame" style="min-height: 410px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--hairline); padding-bottom: 14px;">
+            <span class="mono" style="font-size: 11px; color: var(--text-secondary);">SENTINEL CIRCUIT BREAKER</span>
+            <span class="mono" style="font-size: 11px; color: #ff5e00;">CHAIN ID · 420420777</span>
           </div>
-          <div class="box highlight">
-            <div class="metric-val orange">PolkaVM</div>
-            <h3>RISC-V Virtual Machine</h3>
-            <p><code style="color: #fff;">pallet-revive</code> executes compiled contracts through RISC-V with predictable gas and zero interpretation overhead.</p>
-          </div>
-          <div class="box highlight">
-            <div class="metric-val orange">POT Native</div>
-            <h3>Unified Gas Escalation</h3>
-            <p>EIP-1559 priority fee escalation denominated in native POT tokens gives our transaction top priority with Portaldot block builders.</p>
-          </div>
-        </div>
-      </div>
-      <div class="slide-footer">
-        <span>Dual Identity: Seamless bridge between Substrate SS58 (5...) and EVM H160 (0x...)</span>
-      </div>
-    </div>
 
-    <!-- SLIDE 6: 24/7 MOBILE AUTOPILOT -->
-    <div class="slide">
-      <div class="slide-header">
-        <span class="slide-tag">User Experience</span>
-        <span class="slide-num">06 / 09</span>
-      </div>
-      <div>
-        <h2>24/7 Mobile Shield: Telegram Autopilot</h2>
-        <p class="lead">
-          Users don't need to keep a website tab open. Enroll once and walk away.
-        </p>
-        <div class="grid-2">
-          <div class="box">
-            <h3>Autonomous Validator Watchdog</h3>
-            <p>The Sentinel Daemon runs 24/7/365 in cloud/validator infrastructure colocated with Portaldot full nodes.</p>
-            <p style="margin-top: 10px;">When an attack is front-run, the user receives an instant mobile push notification via <code style="color: var(--accent-glow);">@PortalSentinelAlertsBot</code>.</p>
+          <!-- Center Guardian Emblem -->
+          <div style="text-align: center; padding: 26px 0;">
+            <div style="width: 112px; height: 112px; margin: 0 auto 18px; border-radius: 26px; background: linear-gradient(145deg, #252525, #121212); border: 1.5px solid rgba(255, 94, 0, 0.65); display: flex; align-items: center; justify-content: center; box-shadow: 0 16px 40px rgba(255, 94, 0, 0.22);">
+              <svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.6">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <circle cx="9.5" cy="11" r="1.4" fill="#ff5e00" stroke="none"/>
+                <circle cx="14.5" cy="11" r="1.4" fill="#ff5e00" stroke="none"/>
+                <path d="M9 15h6" stroke="#ff5e00" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div style="font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 4px;">Autonomous Guardian Engine</div>
+            <div class="mono" style="font-size: 11px; color: var(--text-secondary);">PolkaVM · Zero-Custody Invariant</div>
           </div>
-          <div class="box teal">
-            <h3>Push Alert Contains:</h3>
-            <ul style="font-size: 13px; color: var(--text-muted); line-height: 1.8; padding-left: 20px;">
-              <li><strong style="color: #fff;">Threat Score:</strong> 100/100 [CRITICAL THREAT]</li>
-              <li><strong style="color: #fff;">Preemption Latency:</strong> 14ms (Front-ran attacker)</li>
-              <li><strong style="color: #fff;">Capital Rescued:</strong> 5,000 pUSD</li>
-              <li><strong style="color: #fff;">On-Chain Explorer:</strong> Direct link to Portaldot Node Console</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <div class="slide-footer">
-        <span>True peace of mind: Real-time defense without manual intervention.</span>
-      </div>
-    </div>
 
-    <!-- SLIDE 7: TRACK 3 TOOLING & OBSERVABILITY -->
-    <div class="slide">
-      <div class="slide-header">
-        <span class="slide-tag">Track 3 Deliverables</span>
-        <span class="slide-num">07 / 09</span>
-      </div>
-      <div>
-        <h2>Node Operations & Tooling Suite</h2>
-        <p class="lead">
-          Built for Portaldot validator operators, node runners, and security researchers.
-        </p>
-        <div class="grid-3">
-          <div class="box">
-            <h3>CLI Telemetry Probe</h3>
-            <p><code style="color: var(--accent-glow);">npm run cli:health</code></p>
-            <p>Probes Portaldot V3 EVM latency, Substrate node status, latest block height, and gas pricing in real time.</p>
-          </div>
-          <div class="box">
-            <h3>On-Chain Allowance Audit</h3>
-            <p><code style="color: var(--accent-glow);">npm run cli:audit &lt;addr&gt;</code></p>
-            <p>Inspects any wallet address for dangerous unlimited spenders and calculates risk scores on live RPC.</p>
-          </div>
-          <div class="box">
-            <h3>Prometheus & Metrics</h3>
-            <p><code style="color: var(--accent-glow);">/metrics & /health (Port 3001)</code></p>
-            <p>Standard Prometheus exporter for monitoring blocks, latency, detected threats, and defense actions.</p>
+          <div style="background: rgba(0,0,0,0.45); border: 1px solid var(--card-border); border-radius: 10px; padding: 14px 16px;">
+            <div class="mono" style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">DEPLOYED REGISTRY (BLOCK #311022)</div>
+            <div class="mono" style="font-size: 11px; color: #fff; word-break: break-all;">0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF</div>
           </div>
         </div>
       </div>
-      <div class="slide-footer">
-        <span>Dockerized: Single command `docker compose up -d` for colocated validator nodes.</span>
-      </div>
-    </div>
 
-    <!-- SLIDE 8: BUSINESS MODEL & ROADMAP -->
-    <div class="slide">
-      <div class="slide-header">
-        <span class="slide-tag">Sustainability</span>
-        <span class="slide-num">08 / 09</span>
+      <div class="slide-bottom">
+        <span class="slide-footnote">Portaldot Hacker House 2026 · DoraHacks Final Submission</span>
+        <span class="slide-num">01</span>
       </div>
-      <div>
-        <h2>Business Model & Ecosystem Growth</h2>
-        <p class="lead">
-          A sustainable pathway from Hacker House prototype to Portaldot standard security layer.
-        </p>
-        <div class="grid-2">
-          <div class="box">
-            <h3>Freemium Security Model</h3>
-            <p><strong>Retail Tier (Free):</strong> Block monitoring, basic Telegram alerts, 1-click manual revoke UI.</p>
-            <p style="margin-top: 10px;"><strong>Institutional Tier (Subscription / Fee):</strong> Dedicated validator peering, custom sweep rules for DAOs and treasuries, priority fee escalation, SLA uptime.</p>
-          </div>
-          <div class="box highlight">
-            <h3>Portaldot Foundation Grant Alignment</h3>
-            <p>Applying for the <strong>Portaldot Network Ecosystem Foundation Builder Support Program</strong>:</p>
-            <ul style="font-size: 13px; color: var(--text-muted); line-height: 1.8; padding-left: 20px; margin-top: 8px;">
-              <li>Mainnet deployment on Portaldot V3</li>
-              <li>Validator colocated node peering</li>
-              <li>Official integration into Portaldot Node Console</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <div class="slide-footer">
-        <span>Designed for long-term ecosystem infrastructure integration.</span>
-      </div>
-    </div>
+    </section>
 
-    <!-- SLIDE 9: CONCLUSION & DEMO -->
-    <div class="slide">
-      <div class="slide-header">
-        <span class="slide-tag">Live Testnet Proof &amp; Conclusion</span>
-        <span class="slide-num">09 / 09</span>
+    <!-- =======================================================================
+         SLIDE 02: METRICS & ARCHITECTURE OVERVIEW (Matches Reference Slide 2)
+         ======================================================================= -->
+    <section class="slide">
+      <div class="slide-top">
+        <span class="brand">
+          <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 3L2 20h20L12 3z" stroke="#ffffff"/>
+            <circle cx="12" cy="14" r="2.2" fill="#ff5e00" stroke="none"/>
+          </svg>
+          PortalSentinel
+        </span>
+        <span class="slide-year">2026</span>
       </div>
-      <div style="margin: auto 0;">
-        <h1 style="font-size: 40px; margin-bottom: 14px; text-align: center;">The Sentinel Never Sleeps.</h1>
-        <p class="lead" style="max-width: 740px; margin: 0 auto 22px auto; text-align: center; font-size: 16px;">
-          PortalSentinel proves that with Portaldot V3’s <code style="color: var(--accent-glow);">pallet-revive</code> and sub-second blocks, DeFi security no longer has to wait for human intervention.
-        </p>
-        <div class="grid-2" style="margin-bottom: 22px;">
-          <div class="box teal" style="padding: 14px;">
-            <h3 style="font-size: 13px; color: var(--accent-teal);">SentinelRegistry.sol (Block #311022)</h3>
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #fff; word-break: break-all;">0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF</p>
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); word-break: break-all; margin-top: 4px;">Tx: 0xcf77198f0b1666c4084441d61db60a39f6a07981a9c9605fb4341689ba48336c</p>
+
+      <div class="responsive-2col" style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: stretch; margin: auto 0;">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; padding: 8px 0;">
+          <div>
+            <div style="margin-bottom: 18px;">
+              <span class="pill">Who We Are</span>
+            </div>
+            <h2 class="display-lg">
+              Built for Modern<br>
+              On-Chain Security
+            </h2>
           </div>
-          <div class="box teal" style="padding: 14px;">
-            <h3 style="font-size: 13px; color: var(--accent-teal);">DefenseExecutor.sol (Block #311067)</h3>
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #fff; word-break: break-all;">0x89c9510c4b3AeEE8792De383D251ef0b61d406E2</p>
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); word-break: break-all; margin-top: 4px;">Tx: 0x4cdd30974731623f7e9b2e25768d328669a4207ac5d0b7ea8aa0135ae31220f0</p>
-          </div>
-          <div class="box highlight" style="padding: 14px;">
-            <h3 style="font-size: 13px; color: var(--accent-glow);">MockERC20.sol — pUSD (Block #311161)</h3>
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #fff; word-break: break-all;">0x25da2DeD5b0Da07C160e021e0Df636988C3657f5</p>
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); word-break: break-all; margin-top: 4px;">Tx: 0xf959f9ea03878c9ff0472ee3343f0c50c2be0a8fc119a41d6b83de2c250b515b</p>
-          </div>
-          <div class="box highlight" style="padding: 14px;">
-            <h3 style="font-size: 13px; color: var(--accent-glow);">MockExploitFixture.sol (Block #310782)</h3>
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #fff; word-break: break-all;">0xc44a87FE907E497E50ffF6913c0b863bd0758a90</p>
-            <p style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); word-break: break-all; margin-top: 4px;">Tx: 0xcfdbdcf2d2807b19a5b8b00a5e4c0b7ee69cffd8e9df89be1c4e596a9fe1b941</p>
+
+          <div style="margin-top: 64px;">
+            <div class="subhead">A New Generation of Autonomous Node Defense</div>
+            <p class="body-copy" style="max-width: 490px;">
+              PortalSentinel is a closed-loop security daemon and smart-contract firewall engineered for Portaldot V3. We combine block-level anomaly detection, non-custodial Solidity circuit breakers, and operator CLI tooling to halt token approval drains automatically.
+            </p>
           </div>
         </div>
-        <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-          <span class="badge badge-teal" style="font-size: 13px; padding: 8px 16px;">Portaldot V3 Testnet (Chain ID: 420420777)</span>
-          <span class="badge badge-orange" style="font-size: 13px; padding: 8px 16px;">GitHub: Blackwrld04/PortalSentinel</span>
+
+        <!-- Right Stacked 3 Stat Cards -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="card-dark">
+            <div class="stat-num mono">~1,000ms</div>
+            <div class="stat-label">Portaldot V3 <code class="mono">pallet-revive</code> Block Finality Cadence</div>
+          </div>
+
+          <div class="card-dark">
+            <div class="stat-num mono">12 / 12</div>
+            <div class="stat-label">Foundry Invariant &amp; Unit Tests + 15 Daemon Tests Passing</div>
+          </div>
+
+          <div class="card-orange">
+            <div class="stat-num mono">1.35× – 1.85×</div>
+            <div class="stat-label" style="color: #fff;">Priority Fee Escalation Multiplier for Emergency Preemption</div>
+          </div>
         </div>
       </div>
-      <div class="slide-footer">
-        <span>Portaldot Hacker House 2026 · Track 3: Node Operations & Tooling</span>
-        <span>Built with pride for Portaldot Network</span>
+
+      <div class="slide-bottom">
+        <span class="slide-footnote">Track 3: Node Operations &amp; Tooling · P0 Hardened Prototype</span>
+        <span class="slide-num">02</span>
       </div>
-    </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 03: THE VULNERABILITY (Matches Reference Slide 3 Layout)
+         ======================================================================= -->
+    <section class="slide">
+      <div class="slide-top">
+        <span class="brand">
+          <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 3L2 20h20L12 3z" stroke="#ffffff"/>
+            <circle cx="12" cy="14" r="2.2" fill="#ff5e00" stroke="none"/>
+          </svg>
+          PortalSentinel
+        </span>
+        <span class="slide-year">2026</span>
+      </div>
+
+      <div class="responsive-2col" style="display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 48px; align-items: stretch; margin: auto 0;">
+        <div style="display: flex; flex-direction: column; justify-content: space-between;">
+          <p class="body-copy" style="max-width: 390px; font-size: 14.5px;">
+            DeFi users routinely grant unlimited ERC-20 allowances (<code class="mono" style="color:#fff;">type(uint256).max</code>) to routers, bridges, and vaults. When a third-party contract is exploited, attackers drain wallets via <code class="mono" style="color:#fff;">transferFrom</code> in seconds.
+          </p>
+
+          <div style="margin-top: 56px;">
+            <h2 class="display-lg">
+              Gaps Between<br>
+              Detection and<br>
+              Execution <span class="pill" style="margin-left: 10px; transform: translateY(-4px);">The Challenge</span>
+            </h2>
+          </div>
+        </div>
+
+        <!-- Right 4 Hairline Rows with Alternating Orange/White Circles -->
+        <div class="challenge-list">
+          <div class="challenge-item">
+            <span class="dot-orange"></span>
+            <div>
+              <div class="challenge-title">Human Latency Gap</div>
+              <div class="challenge-desc">Users are asleep or away from their desk. Manual revocation requires opening a browser, connecting a wallet, and signing—taking minutes while drains finish in seconds.</div>
+            </div>
+          </div>
+
+          <div class="challenge-item">
+            <span class="dot-white"></span>
+            <div>
+              <div class="challenge-title">Oracle Consensus Lag (15–45 Seconds)</div>
+              <div class="challenge-desc">Multi-node oracle networks require Byzantine consensus rounds before firing a callback—arriving long after the attacker's drain transaction has finalized.</div>
+            </div>
+          </div>
+
+          <div class="challenge-item">
+            <span class="dot-orange"></span>
+            <div>
+              <div class="challenge-title">The Standard ERC-20 Revocation Flaw</div>
+              <div class="challenge-desc">Standard ERC-20 tokens only set allowance for <code class="mono">msg.sender</code>; an external guardian contract cannot overwrite a victim's allowance without a fallback capital sweep.</div>
+            </div>
+          </div>
+
+          <div class="challenge-item">
+            <span class="dot-white"></span>
+            <div>
+              <div class="challenge-title">Silent Partial Revoke Failures</div>
+              <div class="challenge-desc">Naive security bots emit success events even when an underlying token reverts or ignores revocation, leaving victims exposed with a false sense of safety.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-bottom">
+        <span class="slide-footnote">Passive alerts are post-mortems. Active sub-second intervention is essential.</span>
+        <span class="slide-num">03</span>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 04: CLOSED-LOOP ARCHITECTURE (Matches Reference Slide 4 Layout)
+         ======================================================================= -->
+    <section class="slide">
+      <div class="slide-top">
+        <span class="brand">
+          <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 3L2 20h20L12 3z" stroke="#ffffff"/>
+            <circle cx="12" cy="14" r="2.2" fill="#ff5e00" stroke="none"/>
+          </svg>
+          PortalSentinel
+        </span>
+        <span class="slide-year">2026</span>
+      </div>
+
+      <div class="responsive-2col" style="display: grid; grid-template-columns: 1.35fr 0.65fr; gap: 28px; align-items: stretch; margin: auto 0;">
+        <div style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <h2 class="display-lg" style="margin-bottom: 28px;">
+              End-to-End <span class="pill" style="margin-left: 12px; transform: translateY(-4px);">Our Approach</span><br>
+              Closed-Loop Firewall
+            </h2>
+          </div>
+
+          <!-- 3 Vertical Cards Row -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+            <div class="card-dark" style="min-height: 230px; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="font-size: 15px; font-weight: 600; color: #fff;">Block Telemetry &amp; Scoring</div>
+              <p class="body-copy" style="font-size: 12px;">
+                Polls Portaldot V3 <code class="mono">pallet-revive</code> blocks with a crash-safe cursor journal, scoring exploit signals in &lt;1ms against user sensitivity policies.
+              </p>
+            </div>
+
+            <div class="card-dark" style="min-height: 230px; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="font-size: 15px; font-weight: 600; color: #fff;">Verified Batch Revocation</div>
+              <p class="body-copy" style="font-size: 12px;">
+                Calls <code class="mono">guardianRevokeApproval</code> on revocable tokens and verifies post-call <code class="mono">allowance == 0</code> before counting success.
+              </p>
+            </div>
+
+            <div class="card-orange" style="min-height: 230px; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="font-size: 15px; font-weight: 600; color: #fff;">Emergency Capital Sweep</div>
+              <p class="body-copy" style="font-size: 12px; color: rgba(255,255,255,0.9);">
+                Evacuates standard ERC-20 balances via <code class="mono">SafeERC20</code> directly into the user's pre-registered cold vault when revoke is unsupported.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Visual Panel -->
+        <div class="visual-frame" style="justify-content: space-between;">
+          <div>
+            <div class="mono" style="font-size: 10px; color: #ff5e00; margin-bottom: 8px;">ACTION SELECTION ENGINE</div>
+            <div style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 14px;">On-Chain Pre-Check</div>
+            <p class="body-copy" style="font-size: 12px; margin-bottom: 16px;">
+              Before broadcasting, the dispatcher inspects live <code class="mono">balanceOf</code> and <code class="mono">allowance</code> on Portaldot V3 so it never wastes gas on a no-op defense.
+            </p>
+          </div>
+
+          <div style="background: #0d0d0d; border: 1px solid var(--card-border); border-radius: 10px; padding: 14px; font-size: 11px;" class="mono">
+            <div style="color: #808080; margin-bottom: 6px;">// Retry Escalation Ladder</div>
+            <div style="color: #fff;">Attempt 1 → <span style="color:#ff5e00;">1.35×</span> gas</div>
+            <div style="color: #fff;">Attempt 2 → <span style="color:#ff5e00;">1.60×</span> gas</div>
+            <div style="color: #fff;">Attempt 3 → <span style="color:#ff5e00;">1.85×</span> gas</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-bottom">
+        <span class="slide-footnote">Dual-Defense Architecture solves the standard ERC-20 revocation limitation.</span>
+        <span class="slide-num">04</span>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 05: WHY PORTALDOT V3 (Matches Reference Slide 5 Staggered Grid)
+         ======================================================================= -->
+    <section class="slide">
+      <div class="slide-top">
+        <span class="brand">
+          <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 3L2 20h20L12 3z" stroke="#ffffff"/>
+            <circle cx="12" cy="14" r="2.2" fill="#ff5e00" stroke="none"/>
+          </svg>
+          PortalSentinel
+        </span>
+        <span class="slide-year">2026</span>
+      </div>
+
+      <div class="responsive-stagger" style="display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto; gap: 20px; align-items: stretch; margin: auto 0;">
+        <!-- Top-Left Span 2: Big Headline -->
+        <div style="grid-column: 1 / 3; padding-right: 20px; display: flex; flex-direction: column; justify-content: center;">
+          <h2 class="display-lg">
+            Tailored Security<br>
+            Across Portaldot V3
+          </h2>
+        </div>
+
+        <!-- Top-Right: Signature Orange Card -->
+        <div class="card-orange" style="min-height: 195px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="font-size: 16px; font-weight: 600; color: #fff;">pallet-revive RISC-V PolkaVM</div>
+          <p class="body-copy" style="font-size: 12.5px; color: rgba(255,255,255,0.92);">
+            Executes compiled smart contracts on RISC-V with ~1,000ms block cadence and deterministic gas—enabling rapid defensive settlement.
+          </p>
+        </div>
+
+        <!-- Bottom-Left: Pill + Description -->
+        <div style="display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 6px;">
+          <div style="margin-bottom: 14px;">
+            <span class="pill">What We Offer</span>
+          </div>
+          <p class="body-copy" style="font-size: 13px; max-width: 280px;">
+            PortalSentinel leverages Portaldot V3's dual Substrate/EVM runtime, storage-deposit economics, and native POT priority fee ordering.
+          </p>
+        </div>
+
+        <!-- Bottom-Middle: Dark Card -->
+        <div class="card-dark" style="min-height: 195px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="font-size: 16px; font-weight: 600; color: #fff;">Storage-Deposit Optimized</div>
+          <p class="body-copy" style="font-size: 12.5px;">
+            Engineered for Portaldot V3's <code class="mono">DepositPerItem = 37.5 POT</code> model using compact Yul &amp; Solidity bytecode to fit within faucet budgets.
+          </p>
+        </div>
+
+        <!-- Bottom-Right: Dark Card -->
+        <div class="card-dark" style="min-height: 195px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="font-size: 16px; font-weight: 600; color: #fff;">Substrate SS58 ↔ EVM H160</div>
+          <p class="body-copy" style="font-size: 12.5px;">
+            Seamless operational support across Substrate node RPC (<code class="mono">5EF5e8...</code>) and Ethereum JSON-RPC (<code class="mono">0xD6047...</code>) on Chain ID 420420777.
+          </p>
+        </div>
+      </div>
+
+      <div class="slide-bottom">
+        <span class="slide-footnote">Purpose-built for Portaldot Network V3.0 Modular &amp; EVM/WASM Architecture</span>
+        <span class="slide-num">05</span>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 06: ZERO-CUSTODY MATHEMATICAL INVARIANT
+         ======================================================================= -->
+    <section class="slide">
+      <div class="slide-top">
+        <span class="brand">
+          <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 3L2 20h20L12 3z" stroke="#ffffff"/>
+            <circle cx="12" cy="14" r="2.2" fill="#ff5e00" stroke="none"/>
+          </svg>
+          PortalSentinel
+        </span>
+        <span class="slide-year">2026</span>
+      </div>
+
+      <div class="responsive-2col" style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 44px; align-items: stretch; margin: auto 0;">
+        <div style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="margin-bottom: 16px;">
+              <span class="pill">Zero-Custody Proof</span>
+            </div>
+            <h2 class="display-lg" style="margin-bottom: 20px;">
+              Non-Custodial by<br>
+              Smart Contract Law
+            </h2>
+            <p class="body-copy" style="max-width: 500px; margin-bottom: 24px;">
+              Even if the off-chain Guardian server is compromised, the <code class="mono" style="color:#fff;">DefenseExecutor.sol</code> contract makes stealing user funds mathematically impossible: tokens can only move to the user's pre-registered <code class="mono" style="color:#fff;">emergencySafe</code>.
+            </p>
+          </div>
+
+          <div class="card-dark mono" style="font-size: 12px; line-height: 1.7; background: #0d0d0d;">
+            <div style="color: #808080;">// DefenseExecutor.sol — Enforced On-Chain Invariant</div>
+            <div style="color: #fff;">address safe = registry.getEmergencySafe(user);</div>
+            <div style="color: #ff5e00;">if (safe == address(0) || safe == msg.sender) revert InvalidEmergencySafe();</div>
+            <div style="color: #fff;">IERC20(token).safeTransferFrom(user, safe, balance);</div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="card-orange">
+            <div class="stat-num mono">0% Custody</div>
+            <div class="stat-label" style="color:#fff;">Guardian Operator Can Never Receive Swept User Assets</div>
+          </div>
+
+          <div class="card-dark">
+            <div style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 6px;">ReentrancyGuard &amp; Pausable</div>
+            <div class="stat-label" style="color: var(--text-secondary);">Built on OpenZeppelin v5 primitives with strict <code class="mono">onlyGuardian</code> and registry pause circuit breakers.</div>
+          </div>
+
+          <div class="card-dark">
+            <div style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 6px;">Verified Post-State Accounting</div>
+            <div class="stat-label" style="color: var(--text-secondary);">Reverts entire transaction (<code class="mono">NoDefenseExecuted</code>) if zero tokens were revoked or swept, preventing false-positive receipts.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-bottom">
+        <span class="slide-footnote">Audited by 12 Foundry unit &amp; invariant tests in contracts/test/PortalSentinel.t.sol</span>
+        <span class="slide-num">06</span>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 07: TRACK 3 NODE OPERATIONS & 24/7 TELEGRAM SUITE
+         ======================================================================= -->
+    <section class="slide">
+      <div class="slide-top">
+        <span class="brand">
+          <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 3L2 20h20L12 3z" stroke="#ffffff"/>
+            <circle cx="12" cy="14" r="2.2" fill="#ff5e00" stroke="none"/>
+          </svg>
+          PortalSentinel
+        </span>
+        <span class="slide-year">2026</span>
+      </div>
+
+      <div class="responsive-2col" style="display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 48px; align-items: stretch; margin: auto 0;">
+        <div style="display: flex; flex-direction: column; justify-content: space-between;">
+          <p class="body-copy" style="max-width: 390px; font-size: 14.5px;">
+            Built for Portaldot validator operators, security researchers, and everyday DeFi users—combining command-line node diagnostics, Prometheus telemetry, and 24/7 Telegram push alerts.
+          </p>
+
+          <div style="margin-top: 56px;">
+            <h2 class="display-lg">
+              Node Tooling &amp;<br>
+              24/7 Mobile<br>
+              Autopilot <span class="pill" style="margin-left: 10px; transform: translateY(-4px);">Track 3 Suite</span>
+            </h2>
+          </div>
+        </div>
+
+        <div class="challenge-list">
+          <div class="challenge-item">
+            <span class="dot-orange"></span>
+            <div>
+              <div class="challenge-title">Operator CLI Suite (<code class="mono" style="font-size:13px;">health · audit · benchmark · metrics</code>)</div>
+              <div class="challenge-desc">Probes Portaldot V3 EVM &amp; Substrate RPC latency, audits wallet allowances on-chain, and benchmarks multi-sample p50/p95 block lag.</div>
+            </div>
+          </div>
+
+          <div class="challenge-item">
+            <span class="dot-white"></span>
+            <div>
+              <div class="challenge-title">Prometheus Exporter (<code class="mono" style="font-size:13px;">/metrics</code> &amp; <code class="mono" style="font-size:13px;">/health</code>)</div>
+              <div class="challenge-desc">Exposes real-time gauges and counters (<code class="mono">sentinel_monitored_block_height</code>, <code class="mono">sentinel_rpc_latency_ms</code>, <code class="mono">sentinel_defenses_executed_total</code>) for Grafana dashboards.</div>
+            </div>
+          </div>
+
+          <div class="challenge-item">
+            <span class="dot-orange"></span>
+            <div>
+              <div class="challenge-title">24/7 Telegram Bot Advisories (<code class="mono" style="font-size:13px;">@PortalSentinel_Alerts_bot</code>)</div>
+              <div class="challenge-desc">Pushes instant mobile alerts when a threat is detected and when an on-chain revoke or emergency sweep confirms, with direct explorer links.</div>
+            </div>
+          </div>
+
+          <div class="challenge-item">
+            <span class="dot-white"></span>
+            <div>
+              <div class="challenge-title">Colocated Validator Docker Stack</div>
+              <div class="challenge-desc">Multi-stage <code class="mono">Dockerfile</code> and <code class="mono">docker-compose.yml</code> with persistent block-cursor volume (<code class="mono">/data/.sentinel-state.json</code>) and IPv4-first DNS tuning.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-bottom">
+        <span class="slide-footnote">Live Telemetry Endpoints: portal-sentinel-pi.vercel.app/api/health &amp; /api/metrics</span>
+        <span class="slide-num">07</span>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 08: SUSTAINABILITY & ECOSYSTEM ROADMAP (Matches Reference Slide 5)
+         ======================================================================= -->
+    <section class="slide">
+      <div class="slide-top">
+        <span class="brand">
+          <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 3L2 20h20L12 3z" stroke="#ffffff"/>
+            <circle cx="12" cy="14" r="2.2" fill="#ff5e00" stroke="none"/>
+          </svg>
+          PortalSentinel
+        </span>
+        <span class="slide-year">2026</span>
+      </div>
+
+      <div class="responsive-stagger" style="display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto; gap: 20px; align-items: stretch; margin: auto 0;">
+        <div style="grid-column: 1 / 3; padding-right: 20px; display: flex; flex-direction: column; justify-content: center;">
+          <h2 class="display-lg">
+            Long-Term Roadmap<br>
+            Across Portaldot
+          </h2>
+        </div>
+
+        <!-- Top-Right Orange Card -->
+        <div class="card-orange" style="min-height: 195px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="font-size: 16px; font-weight: 600; color: #fff;">P0 · Shipped on Testnet</div>
+          <p class="body-copy" style="font-size: 12.5px; color: rgba(255,255,255,0.92);">
+            All 4 contracts deployed on Portaldot V3 Testnet, post-call verified revocations, crash-safe block cursor, 27 automated tests, and live Vercel DApp.
+          </p>
+        </div>
+
+        <!-- Bottom-Left -->
+        <div style="display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 6px;">
+          <div style="margin-bottom: 14px;">
+            <span class="pill">Ecosystem Growth</span>
+          </div>
+          <p class="body-copy" style="font-size: 13px; max-width: 280px;">
+            Applying for the Portaldot Network Ecosystem Foundation Builder Program to scale from single-guardian testnet daemon to decentralized validator middleware.
+          </p>
+        </div>
+
+        <!-- Bottom-Middle -->
+        <div class="card-dark" style="min-height: 195px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="font-size: 16px; font-weight: 600; color: #fff;">P1 · General Calldata Detector</div>
+          <p class="body-copy" style="font-size: 12.5px;">
+            Decode arbitrary <code class="mono">transferFrom</code>, <code class="mono">permit</code>, and unverified spender interactions across all Portaldot DEXs &amp; bridges with SQLite incident history.
+          </p>
+        </div>
+
+        <!-- Bottom-Right -->
+        <div class="card-dark" style="min-height: 195px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="font-size: 16px; font-weight: 600; color: #fff;">P2 · Multi-Guardian Quorum</div>
+          <p class="body-copy" style="font-size: 12.5px;">
+            Threshold-signed guardian set colocated with Portaldot validators, per-user Telegram chat binding, and native integration into Portaldot Node Console.
+          </p>
+        </div>
+      </div>
+
+      <div class="slide-bottom">
+        <span class="slide-footnote">Freemium Retail Shield + Institutional Treasury SLA for Portaldot DAOs &amp; Protocols</span>
+        <span class="slide-num">08</span>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 09: VERIFIED ON-CHAIN DEPLOYMENTS & LIVE LINKS
+         ======================================================================= -->
+    <section class="slide">
+      <div class="slide-top">
+        <span class="brand">
+          <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 3L2 20h20L12 3z" stroke="#ffffff"/>
+            <circle cx="12" cy="14" r="2.2" fill="#ff5e00" stroke="none"/>
+          </svg>
+          PortalSentinel
+        </span>
+        <span class="slide-year">2026</span>
+      </div>
+
+      <div class="responsive-2col" style="display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 36px; align-items: center; margin: auto 0;">
+        <div>
+          <div style="margin-bottom: 16px;">
+            <span class="pill">Verified On-Chain</span>
+          </div>
+          <h2 class="display-lg" style="margin-bottom: 18px;">
+            Live on Portaldot<br>
+            V3 Testnet
+          </h2>
+          <p class="body-copy" style="margin-bottom: 24px;">
+            All four smart contracts are deployed and linked on Portaldot V3 Testnet (<code class="mono" style="color:#fff;">Chain ID: 420420777</code>) via <code class="mono" style="color:#fff;">pallet-revive</code>.
+          </p>
+
+          <div class="card-dark" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <div class="mono" style="font-size: 10px; color: var(--text-muted);">LIVE WEB3 DAPP (VERCEL)</div>
+              <a href="https://portal-sentinel-pi.vercel.app" target="_blank" class="mono" style="font-size: 12.5px; color: #ff5e00; text-decoration: none;">https://portal-sentinel-pi.vercel.app ↗</a>
+            </div>
+            <div>
+              <div class="mono" style="font-size: 10px; color: var(--text-muted);">PUBLIC GITHUB REPOSITORY</div>
+              <a href="https://github.com/Blackwrld04/PortalSentinel" target="_blank" class="mono" style="font-size: 12.5px; color: #fff; text-decoration: none;">github.com/Blackwrld04/PortalSentinel ↗</a>
+            </div>
+            <div>
+              <div class="mono" style="font-size: 10px; color: var(--text-muted);">DEPLOYER &amp; GUARDIAN (SS58 / H160)</div>
+              <div class="mono" style="font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni</div>
+              <div class="mono" style="font-size: 10.5px; color: var(--text-secondary); word-break: break-all;">0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right 4 Contract Cards -->
+        <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+          <div class="card-orange" style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <strong style="font-size: 14px; color: #fff;">SentinelRegistry.sol</strong>
+              <span class="mono" style="font-size: 11px; color: #fff;">Block #311022</span>
+            </div>
+            <div class="mono" style="font-size: 12px; color: #fff; word-break: break-all;">0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF</div>
+            <div class="mono" style="font-size: 9.5px; color: rgba(255,255,255,0.8); word-break: break-all; margin-top: 3px;">Tx: 0xcf77198f0b1666c4084441d61db60a39f6a07981a9c9605fb4341689ba48336c</div>
+          </div>
+
+          <div class="card-dark" style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <strong style="font-size: 14px; color: #fff;">DefenseExecutor.sol</strong>
+              <span class="mono" style="font-size: 11px; color: #ff5e00;">Block #311067</span>
+            </div>
+            <div class="mono" style="font-size: 12px; color: #fff; word-break: break-all;">0x89c9510c4b3AeEE8792De383D251ef0b61d406E2</div>
+            <div class="mono" style="font-size: 9.5px; color: var(--text-muted); word-break: break-all; margin-top: 3px;">Tx: 0x4cdd30974731623f7e9b2e25768d328669a4207ac5d0b7ea8aa0135ae31220f0</div>
+          </div>
+
+          <div class="card-dark" style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <strong style="font-size: 14px; color: #fff;">MockERC20.sol (pUSD)</strong>
+              <span class="mono" style="font-size: 11px; color: #ff5e00;">Block #311161</span>
+            </div>
+            <div class="mono" style="font-size: 12px; color: #fff; word-break: break-all;">0x25da2DeD5b0Da07C160e021e0Df636988C3657f5</div>
+            <div class="mono" style="font-size: 9.5px; color: var(--text-muted); word-break: break-all; margin-top: 3px;">Tx: 0xf959f9ea03878c9ff0472ee3343f0c50c2be0a8fc119a41d6b83de2c250b515b</div>
+          </div>
+
+          <div class="card-dark" style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <strong style="font-size: 14px; color: #fff;">MockExploitFixture.sol</strong>
+              <span class="mono" style="font-size: 11px; color: #ff5e00;">Block #310782</span>
+            </div>
+            <div class="mono" style="font-size: 12px; color: #fff; word-break: break-all;">0xc44a87FE907E497E50ffF6913c0b863bd0758a90</div>
+            <div class="mono" style="font-size: 9.5px; color: var(--text-muted); word-break: break-all; margin-top: 3px;">Tx: 0xcfdbdcf2d2807b19a5b8b00a5e4c0b7ee69cffd8e9df89be1c4e596a9fe1b941</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-bottom">
+        <span class="slide-footnote">The Sentinel Never Sleeps · Portaldot Hacker House 2026</span>
+        <span class="slide-num">09</span>
+      </div>
+    </section>
 
   </div>
 
