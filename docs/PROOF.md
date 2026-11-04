@@ -20,12 +20,16 @@ This document contains verifiable on-chain proofs, contract artifacts, and repro
 
 ## 2. Smart Contract Deployments (Portaldot V3 EVM)
 
-| Contract | Purpose | Compiler / Version | Status |
-| :--- | :--- | :--- | :---: |
-| **`SentinelRegistry.sol`** | User protection policies, sensitivity modes, and emergency safe store | Solc `0.8.24` (Cancun) | ✅ Tested & Ready |
-| **`DefenseExecutor.sol`** | Non-custodial circuit breaker (`executeEmergencyBatchRevoke`, `executeEmergencySweep`) | Solc `0.8.24` (Cancun) | ✅ Tested & Ready |
-| **`MockERC20.sol`** | Testnet token (`pUSD`) supporting direct guardian revocation | Solc `0.8.24` (Cancun) | ✅ Tested & Ready |
-| **`MockExploitFixture.sol`** | Deterministic attack simulation fixture for instant judge verification | Solc `0.8.24` (Cancun) | ✅ Tested & Ready |
+* **Deployer & Guardian EOA:** `0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9`
+* **Substrate Funder (`SS58`):** `5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`
+
+| Contract | Deployed Address | Deployment Tx Hash | Block | Status |
+| :--- | :--- | :--- | :---: | :---: |
+| **`SentinelRegistry.sol`** | `0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF` | `0xcf77198f0b1666c4084441d61db60a39f6a07981a9c9605fb4341689ba48336c` | `#311022` | ✅ Live on Testnet |
+| **`DefenseExecutor.sol`** | `0x89c9510c4b3AeEE8792De383D251ef0b61d406E2` | `0x4cdd30974731623f7e9b2e25768d328669a4207ac5d0b7ea8aa0135ae31220f0` | `#311067` | ✅ Live on Testnet |
+| **`MockERC20.sol` (`pUSD`)** | `0x25da2DeD5b0Da07C160e021e0Df636988C3657f5` | `0xf959f9ea03878c9ff0472ee3343f0c50c2be0a8fc119a41d6b83de2c250b515b` | `#311161` | ✅ Live on Testnet |
+| **`MockExploitFixture.sol`** | `0xc44a87FE907E497E50ffF6913c0b863bd0758a90` | `0xcfdbdcf2d2807b19a5b8b00a5e4c0b7ee69cffd8e9df89be1c4e596a9fe1b941` | `#310782` | ✅ Live on Testnet |
+| **Registry `setDefenseExecutor`** | `0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF` | `0x9298f248fb8b53534ca7ae243331e162848ccbb36edbc66b4fba2971a181a0b4` | `#311068` | ✅ Linked |
 
 ---
 

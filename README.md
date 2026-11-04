@@ -87,7 +87,7 @@ Traditional Layer 1 blockchains (such as Ethereum with 12-second slots) suffer f
 All transactions on Portaldot V3 utilize native `POT` tokens for gas. The Sentinel Daemon calculates dynamic EIP-1559 priority fee escalation directly in `POT`, ensuring block builders prioritize the circuit breaker transaction ahead of the attacker.
 
 ### 3.4 Dual-Identity Substrate & EVM Architecture
-Portaldot bridges native Substrate SS58 addresses (beginning with `5`, such as `5FKcVpYCBtCCaeGP6ZDTdhKGgbNibGLoEbFTGJzkZodXh6jV`) with EVM H160 addresses (`0x4d5a5FC178916ED51Ec0a02E38028f47AC2f6E67`). PortalSentinel natively supports this dual identity across the dashboard, telemetry feed, and token faucet coordination.
+Portaldot bridges native Substrate SS58 addresses (beginning with `5`, such as `5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`) with EVM H160 addresses (`0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9`). PortalSentinel natively supports this dual identity across the dashboard, telemetry feed, and token faucet coordination.
 
 ---
 
@@ -204,7 +204,7 @@ cd daemon
 npm run cli health
 
 # 2. Audit an address or contract for dangerous allowances & risk scores
-npm run cli audit 0x4d5a5FC178916ED51Ec0a02E38028f47AC2f6E67
+npm run cli audit 0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9
 
 # 3. Benchmark RPC latency across consecutive requests
 npm run cli benchmark
@@ -355,10 +355,10 @@ npm run dev
 | `PORTALDOT_CHAIN_ID` | EVM Chain ID | `420420777` |
 | `PORTALDOT_REQUEST_TIMEOUT_MS` | Per-request RPC timeout | `10000` |
 | `PORTALDOT_LOG_RANGE_BLOCKS` | Blocks per `getLogs` batch during catch-up | `500` |
-| `SENTINEL_REGISTRY_ADDRESS` | Deployed SentinelRegistry contract | `0x5FbDB2315678afecb367f032d93F642f64180aa3` |
-| `DEFENSE_EXECUTOR_ADDRESS` | Deployed DefenseExecutor contract | `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512` |
-| `MOCK_TOKEN_ADDRESS` | Token watched by the demo fixture | `0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0` |
-| `MOCK_EXPLOIT_ADDRESS` | Demo attack fixture / log emitter | `0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9` |
+| `SENTINEL_REGISTRY_ADDRESS` | Deployed SentinelRegistry contract | `0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF` |
+| `DEFENSE_EXECUTOR_ADDRESS` | Deployed DefenseExecutor contract | `0x89c9510c4b3AeEE8792De383D251ef0b61d406E2` |
+| `MOCK_TOKEN_ADDRESS` | Token watched by the demo fixture | `0x25da2DeD5b0Da07C160e021e0Df636988C3657f5` |
+| `MOCK_EXPLOIT_ADDRESS` | Demo attack fixture / log emitter | `0xc44a87FE907E497E50ffF6913c0b863bd0758a90` |
 | `GUARDIAN_PRIVATE_KEY` | Operator key for defense dispatch. **Required only when `DRY_RUN=false`.** | *(no default)* |
 | `DRY_RUN` | Simulate defense decisions without broadcasting | `true` |
 | `DEFENSE_MAX_ATTEMPTS` | Pre-broadcast retry attempts | `3` |
@@ -377,9 +377,21 @@ npm run dev
 ### Portaldot V3 EVM Testnet
 
 * **EVM RPC:** `https://test-evm-rpc-v3.portaldot.dev`
+* **Substrate RPC:** `wss://test-node-v3.portaldot.dev`
 * **Node Explorer:** [https://node-console.portaldot.dev/](https://node-console.portaldot.dev/)
 * **Chain ID:** `420420777` (`0x190f1ca9`)
-* **Gas Currency:** `POT`
+* **Gas Currency:** `POT` (`tPOT`)
+* **Deployer & Guardian EOA:** `0xD6047E51f4c52a28eA1fDDa94A60974e38C919A9` (funded from Substrate SS58 `5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`)
+
+### Live Deployed Contracts on Portaldot V3 Testnet (`420420777`)
+
+| Contract | Address | Deployment Transaction Hash | Block |
+| :--- | :--- | :--- | :--- |
+| **`SentinelRegistry.sol`** | `0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF` | `0xcf77198f0b1666c4084441d61db60a39f6a07981a9c9605fb4341689ba48336c` | `#311022` |
+| **`DefenseExecutor.sol`** | `0x89c9510c4b3AeEE8792De383D251ef0b61d406E2` | `0x4cdd30974731623f7e9b2e25768d328669a4207ac5d0b7ea8aa0135ae31220f0` | `#311067` |
+| **`MockERC20.sol` (`pUSD`)** | `0x25da2DeD5b0Da07C160e021e0Df636988C3657f5` | `0xf959f9ea03878c9ff0472ee3343f0c50c2be0a8fc119a41d6b83de2c250b515b` | `#311161` |
+| **`MockExploitFixture.sol`** | `0xc44a87FE907E497E50ffF6913c0b863bd0758a90` | `0xcfdbdcf2d2807b19a5b8b00a5e4c0b7ee69cffd8e9df89be1c4e596a9fe1b941` | `#310782` |
+| **Registry `setDefenseExecutor`** | `0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF` | `0x9298f248fb8b53534ca7ae243331e162848ccbb36edbc66b4fba2971a181a0b4` | `#311068` |
 
 ### Core Interfaces & ABIs
 
@@ -420,8 +432,9 @@ During the development and testing of PortalSentinel on Portaldot V3 (`pallet-re
 
 1. **IPv6 vs. IPv4 RPC Timeouts:** The public endpoint `https://test-evm-rpc-v3.portaldot.dev` is dual-stack, and IPv6 routes can be unreachable. Combining `dns.setDefaultResultOrder("ipv4first")` with Node's `--no-network-family-autoselection` flag prevents Happy Eyeballs from stalling on the dead route; the daemon scripts and container set both.
 2. **Standard ERC-20 Revocation Impossibility:** Traditional guardian contracts fail because third-party smart contracts cannot call `token.approve(spender, 0)` on behalf of a victim. Implementing `executeEmergencySweep` to transfer balances to an invariant cold vault is the only universal defense that protects standard tokens.
-3. **Substrate SS58 vs. EVM H160 Mapping:** The testnet token faucet requires an SS58 address starting with `5`, while MetaMask and Foundry contracts require an H160 address starting with `0x`. Exposing both identities side-by-side in the UI eliminates onboarding friction.
-4. **Autonomous Autopilot Requirement:** Users will not keep a browser tab open 24/7. Connecting the daemon to Telegram via long-polling and instant push dispatch transforms a local tool into a hands-free security guardian.
+3. **Substrate SS58 vs. EVM H160 Mapping (`0xEE`-Padded `AccountId32`):** The testnet token faucet distributes `tPOT` to native Substrate SS58 addresses starting with `5` (14 decimals on Substrate), while `pallet-revive` maps EVM `H160` addresses (18 decimals, `NativeToEthRatio = 10,000`) to 32-byte `AccountId32` keys by appending twelve `0xEE` bytes (`H160 ++ 0xeeeeeeeeeeeeeeeeeeeeeeee`).
+4. **`pallet-revive` Storage Deposit & Extrinsic Weight Caps:** On Portaldot V3 (`pallet-revive`), contract deployment reserves `DepositPerItem` (`37.5 POT`) and `DepositPerByte` (`0.0234375 POT`) from the sender's free balance, and encodes this storage deposit into `eth_estimateGas`. Optimizing contract bytecode with `--optimize-runs 1 --via-ir --no-cbor-metadata` keeps deployment gas well below `MaxEthExtrinsicWeight` (`~8.5e15`).
+5. **Autonomous Autopilot Requirement:** Users will not keep a browser tab open 24/7. Connecting the daemon to Telegram via long-polling and instant push dispatch transforms a local tool into a hands-free security guardian.
 
 ---
 
@@ -443,10 +456,27 @@ A detailed technical comparison document is available at [`docs/COMPARATIVE_ANAL
 ## 15. DoraHacks Hackathon Submission Details
 
 * **Submission Kit:** [`docs/DORAHACKS_SUBMISSION_KIT.md`](docs/DORAHACKS_SUBMISSION_KIT.md)
-* **Pitch Deck:** [`docs/PITCH_DECK.md`](docs/PITCH_DECK.md)
+* **On-Chain Proofs:** [`docs/PROOF.md`](docs/PROOF.md)
+* **Pitch Deck (Markdown & Printable HTML):** [`docs/PITCH_DECK.md`](docs/PITCH_DECK.md) · [`docs/pitch-deck.html`](docs/pitch-deck.html)
 * **Demo Video Storyboard:** Included in `docs/DORAHACKS_SUBMISSION_KIT.md` (3-minute runtime)
 * **Official Discord Contact:** DM admin `@titus242471` on Portaldot Discord / `@Stella707827` on DoraHacks
 * **Team:** PortalSentinel Core Team
+
+---
+
+## 16. Open-Source Frameworks & Third-Party Attribution
+
+In compliance with the **Portaldot Hacker House 2026 Code Compliance & Intellectual Property** rules, all open-source libraries, SDKs, and third-party dependencies used in PortalSentinel are disclosed below:
+
+| Package / Framework | License | Usage in PortalSentinel |
+| :--- | :--- | :--- |
+| **OpenZeppelin Contracts (`v5.x`)** | MIT | Standard `IERC20`, `SafeERC20`, `Ownable`, `Pausable`, and `ReentrancyGuard` interfaces/primitives in `contracts/` |
+| **Foundry / Solc (`0.8.24`)** | MIT / Apache-2.0 | Solidity compilation, fuzz testing, and deployment scripting |
+| **Ethers.js (`v6.13+`)** | MIT | EVM JSON-RPC provider, contract ABI encoding, `NonceManager`, and wallet signing in `daemon/` and `frontend/` |
+| **React (`v18.3`) & Vite (`v5.4`)** | MIT | Frontend Web3 command center and interactive simulation sandbox |
+| **Lucide React (`v0.454`)** | ISC | UI telemetry and security status iconography |
+| **Canvas-Confetti (`v1.9`)** | ISC | Visual confirmation feedback on shield registration and allowance revocation |
+| **`dotenv` (`v16.4`) & `tsx` (`v4.19`)** | BSD-2-Clause / MIT | Daemon environment configuration and TypeScript execution |
 
 ---
 

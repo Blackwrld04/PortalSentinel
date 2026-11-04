@@ -93,19 +93,19 @@ export const CONFIG = {
   contracts: {
     registry: readAddress(
       "SENTINEL_REGISTRY_ADDRESS",
-      "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+      "0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF"
     ),
     executor: readAddress(
       "DEFENSE_EXECUTOR_ADDRESS",
-      "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+      "0x89c9510c4b3AeEE8792De383D251ef0b61d406E2"
     ),
     mockToken: readAddress(
       "MOCK_TOKEN_ADDRESS",
-      "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+      "0x25da2DeD5b0Da07C160e021e0Df636988C3657f5"
     ),
     mockExploit: readAddress(
       "MOCK_EXPLOIT_ADDRESS",
-      "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+      "0xc44a87FE907E497E50ffF6913c0b863bd0758a90"
     ),
   },
 
