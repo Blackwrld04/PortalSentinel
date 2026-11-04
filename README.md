@@ -3,10 +3,17 @@
 **Autonomous closed-loop security firewall and block-level circuit breaker for Portaldot V3 EVM (`pallet-revive` RISC-V PolkaVM) — detecting approval drains, dispatching a priority-gas defense, and delivering 24/7 mobile protection via Telegram.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Live DApp](https://img.shields.io/badge/Live%20Web3%20DApp-portal--sentinel--pi.vercel.app-00c7b7.svg)](https://portal-sentinel-pi.vercel.app/)
+[![Pitch Deck](https://img.shields.io/badge/Pitch%20Deck-9--Slide%20HTML-ff6a1a.svg)](https://portal-sentinel-pi.vercel.app/pitch-deck.html)
 [![Network: Portaldot V3](https://img.shields.io/badge/Network-Portaldot%20V3%20(420420777)-purple.svg)](https://node-console.portaldot.dev/)
 [![Foundry Tests](https://img.shields.io/badge/Foundry%20Tests-12%2F12%20Passing-brightgreen.svg)](contracts/)
 [![Track: Node Operations & Tooling](https://img.shields.io/badge/DoraHacks-Track%203%20Tooling-orange.svg)](docs/DORAHACKS_SUBMISSION_KIT.md)
 [![Substrate Engine](https://img.shields.io/badge/Engine-pallet--revive%20%2F%20PolkaVM-black.svg)](https://node-console.portaldot.dev/)
+
+* **Live Web3 DApp:** [https://portal-sentinel-pi.vercel.app/](https://portal-sentinel-pi.vercel.app/)
+* **Live Pitch Deck:** [https://portal-sentinel-pi.vercel.app/pitch-deck.html](https://portal-sentinel-pi.vercel.app/pitch-deck.html)
+* **Live Telemetry JSON API:** [https://portal-sentinel-pi.vercel.app/api/health](https://portal-sentinel-pi.vercel.app/api/health)
+* **Live Prometheus Metrics API:** [https://portal-sentinel-pi.vercel.app/api/metrics](https://portal-sentinel-pi.vercel.app/api/metrics)
 
 > **Production status:** this repository is being hardened from a hackathon demo into an
 > operator-grade service. See

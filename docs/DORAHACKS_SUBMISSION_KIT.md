@@ -17,8 +17,12 @@
 * **Tagline / One-Sentence Pitch:**  
   *Autonomous on-chain firewall and closed-loop circuit breaker for Portaldot V3 EVM that reacts to a configured drain signal, attempts an on-chain defense, and delivers Telegram advisories without requiring the user to keep a browser tab open. Current detection is block-poll based; see the production hardening plan for scope.*
 * **Track:** Track 3 — Node Operations & Tooling (Node monitoring, security analysis, automated defense, and operator CLI tooling)
-* **GitHub Repository:** [Public GitHub Repo](https://github.com/blackwrld04/PortalSentinel)
-* **Live Demo URL:** `http://localhost:3002` (or public deploy)
+* **GitHub Repository:** [Public GitHub Repo](https://github.com/Blackwrld04/PortalSentinel)
+* **Live Demo / Web3 DApp URL:** [https://portal-sentinel-pi.vercel.app/](https://portal-sentinel-pi.vercel.app/)
+* **Live Pitch Deck URL:** [https://portal-sentinel-pi.vercel.app/pitch-deck.html](https://portal-sentinel-pi.vercel.app/pitch-deck.html)
+* **Live Telemetry & Prometheus Endpoints:**
+  * JSON Health: [https://portal-sentinel-pi.vercel.app/api/health](https://portal-sentinel-pi.vercel.app/api/health)
+  * Prometheus Metrics: [https://portal-sentinel-pi.vercel.app/api/metrics](https://portal-sentinel-pi.vercel.app/api/metrics)
 * **Explorer Links:** [Portaldot Node Console Explorer](https://node-console.portaldot.dev/)
 * **Deployer & Guardian Account:**
   * **Substrate SS58:** `5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`

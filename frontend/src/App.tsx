@@ -44,8 +44,15 @@ interface ApprovalItem {
 
 const PORTALDOT_CHAIN_ID_DEC = 420420777;
 const PORTALDOT_CHAIN_ID_HEX = "0x190f1ca9";
-const DAEMON_API_URL =
-  ((import.meta as any).env?.VITE_DAEMON_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const DEFAULT_DAEMON_API_URL =
+  typeof window !== "undefined" &&
+  window.location.hostname !== "localhost" &&
+  window.location.hostname !== "127.0.0.1"
+    ? "/api"
+    : "http://localhost:3001";
+const DAEMON_API_URL = (
+  (import.meta as any).env?.VITE_DAEMON_API_URL || DEFAULT_DAEMON_API_URL
+).replace(/\/$/, "");
 
 const PORTALDOT_NETWORK_CONFIG = {
   chainId: PORTALDOT_CHAIN_ID_HEX,
