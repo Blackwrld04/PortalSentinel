@@ -44,6 +44,8 @@ interface ApprovalItem {
 
 const PORTALDOT_CHAIN_ID_DEC = 420420777;
 const PORTALDOT_CHAIN_ID_HEX = "0x190f1ca9";
+const DAEMON_API_URL =
+  ((import.meta as any).env?.VITE_DAEMON_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
 const PORTALDOT_NETWORK_CONFIG = {
   chainId: PORTALDOT_CHAIN_ID_HEX,
@@ -334,11 +336,12 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
     }
   };
 
-  // Poll live daemon observability metrics on port 3001
+  // Poll live daemon observability metrics (or fall back to live Portaldot V3 RPC telemetry)
   useEffect(() => {
+    const startTime = Date.now();
     const fetchDaemonMetrics = async () => {
       try {
-        const res = await fetch("http://localhost:3001/health");
+        const res = await fetch(`${DAEMON_API_URL}/health`);
         if (res.ok) {
           const data = await res.json();
           setDaemonMetrics({
@@ -353,9 +356,37 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
             uptimeSeconds: data.metrics.uptimeSeconds ?? 0,
             dryRun: Boolean(data.dryRun ?? data.metrics.dryRun),
           });
+          return;
         }
       } catch {
-        // The daemon is unreachable: do not keep presenting stale "online" data.
+        // Fall through to direct Portaldot V3 RPC telemetry below
+      }
+
+      try {
+        const t0 = performance.now();
+        const rpcRes = await fetch("https://test-evm-rpc-v3.portaldot.dev", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+        });
+        if (rpcRes.ok) {
+          const rpcJson = await rpcRes.json();
+          const latency = Math.round(performance.now() - t0);
+          const height = parseInt(rpcJson.result, 16) || 0;
+          setDaemonMetrics((prev) => ({
+            status: "rpc-direct",
+            blockHeight: height,
+            rpcLatencyMs: latency,
+            threatsDetected: prev?.threatsDetected ?? 0,
+            defensesExecuted: prev?.defensesExecuted ?? 0,
+            lastDefenseLatencyMs: prev?.lastDefenseLatencyMs ?? 0,
+            alertsSent: prev?.alertsSent ?? 0,
+            uptimeSeconds: Math.floor((Date.now() - startTime) / 1000),
+            dryRun: false,
+          }));
+          return;
+        }
+      } catch {
         setDaemonMetrics(null);
       }
     };
@@ -1733,7 +1764,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
 
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
                   <a
-                    href="http://localhost:3001/health"
+                    href={`${DAEMON_API_URL}/health`}
                     target="_blank"
                     rel="noreferrer"
                     className="outline-button launch"
@@ -1742,7 +1773,7 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
                     JSON /health ↗
                   </a>
                   <a
-                    href="http://localhost:3001/metrics"
+                    href={`${DAEMON_API_URL}/metrics`}
                     target="_blank"
                     rel="noreferrer"
                     className="outline-button"

@@ -134,9 +134,11 @@ export const CONFIG = {
 
   // Observability
   metrics: {
-    port: readInt("METRICS_PORT", 3001),
-    host: process.env.METRICS_HOST?.trim() || "127.0.0.1",
-    corsOrigin: process.env.CORS_ORIGIN?.trim() || "http://localhost:3002",
+    port: readInt("METRICS_PORT", readInt("PORT", 3001)),
+    host:
+      process.env.METRICS_HOST?.trim() ||
+      (process.env.RENDER || process.env.PORT ? "0.0.0.0" : "127.0.0.1"),
+    corsOrigin: process.env.CORS_ORIGIN?.trim() || "*",
   },
 } as const;
 

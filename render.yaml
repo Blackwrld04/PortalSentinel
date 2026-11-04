@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: portalsentinel-daemon
+    runtime: node
+    plan: free
+    rootDir: daemon
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_OPTIONS
+        value: --dns-result-order=ipv4first --no-network-family-autoselection
+      - key: PORTALDOT_RPC_URL
+        value: https://test-evm-rpc-v3.portaldot.dev
+      - key: PORTALDOT_CHAIN_ID
+        value: "420420777"
+      - key: SENTINEL_REGISTRY_ADDRESS
+        value: "0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF"
+      - key: DEFENSE_EXECUTOR_ADDRESS
+        value: "0x89c9510c4b3AeEE8792De383D251ef0b61d406E2"
+      - key: MOCK_TOKEN_ADDRESS
+        value: "0x25da2DeD5b0Da07C160e021e0Df636988C3657f5"
+      - key: MOCK_EXPLOIT_ADDRESS
+        value: "0xc44a87FE907E497E50ffF6913c0b863bd0758a90"
+      - key: DRY_RUN
+        value: "false"
+      - key: TELEGRAM_ALERTS_ENABLED
+        value: "true"
+      - key: METRICS_HOST
+        value: "0.0.0.0"
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: GUARDIAN_PRIVATE_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
