@@ -13,6 +13,8 @@
 * **Subtitle:** Autonomous Closed-Loop Security Firewall & Circuit Breaker for Portaldot V3 EVM
 * **Presenter:** PortalSentinel Core Team
 * **Track:** Track 3 (Node Operations & Tooling)
+* **Portaldot V3 Testnet Wallet Address (SubWallet SS58):** `5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`
+* **Live Pitch Deck:** `https://portal-sentinel-pi.vercel.app/pitch-deck.html`
 
 ---
 
@@ -76,10 +78,14 @@
 ---
 
 ### Slide 9: Live Testnet Proof & Conclusion
+* **Portaldot V3 Testnet Wallet Address (SubWallet SS58):** `5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni`
 * **Live Deployed Contracts on Portaldot V3 Testnet (`Chain ID: 420420777`):**
   * `SentinelRegistry.sol`: `0x31F0A0aa7622a3fdD02EcF945f8Bd5CE6f11f4cF` (Block `#311022`)
   * `DefenseExecutor.sol`: `0x89c9510c4b3AeEE8792De383D251ef0b61d406E2` (Block `#311067`)
   * `MockERC20.sol (pUSD)`: `0x25da2DeD5b0Da07C160e021e0Df636988C3657f5` (Block `#311161`)
   * `MockExploitFixture.sol`: `0xc44a87FE907E497E50ffF6913c0b863bd0758a90` (Block `#310782`)
 * **Summary:** PortalSentinel replaces passive post-incident forensics with proactive, autonomous on-chain defense.
-* **Call to Action:** Test the live sandbox at `http://localhost:3002` or run `npm run cli:health`!
+* **Live Links:**
+  * **Live Web3 DApp:** `https://portal-sentinel-pi.vercel.app/`
+  * **Live Pitch Deck:** `https://portal-sentinel-pi.vercel.app/pitch-deck.html`
+  * **Live Demo Video:** `https://portal-sentinel-pi.vercel.app/demo.mp4`
