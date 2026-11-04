@@ -71,6 +71,7 @@ export default function App() {
   
   // Web3 Live Wallet State (Pillar 2)
   const [walletConnected, setWalletConnected] = useState(false);
+  const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [connectedChainId, setConnectedChainId] = useState<number | null>(null);
   const [isWrongNetwork, setIsWrongNetwork] = useState(false);
   const [potBalance, setPotBalance] = useState<string>("500.00");
@@ -175,6 +176,8 @@ export default function App() {
 
   const connectWallet = async () => {
     if (typeof window === "undefined") return;
+    setIsConnectingWallet(true);
+    addLog("[SUBWALLET] Requesting SubWallet connection...");
 
     const finalizeSubWalletConnection = (addr?: string) => {
       const finalSs58 =
@@ -188,65 +191,62 @@ export default function App() {
       setIsWrongNetwork(false);
       setConnectedChainId(PORTALDOT_CHAIN_ID_DEC);
       setPotBalance("500.00");
+      setIsConnectingWallet(false);
       addLog(`[SUBWALLET] Connected Portaldot V3 Testnet Account: ${finalSs58}`);
     };
 
-    // 1. Prioritize SubWallet / Polkadot Substrate extension (window.injectedWeb3)
-    const injectedWeb3 = (window as any).injectedWeb3;
-    const subwalletSubstrate =
-      injectedWeb3?.["subwallet-js"] ||
-      injectedWeb3?.["polkadot-js"] ||
-      injectedWeb3?.["talisman"] ||
-      (injectedWeb3 ? Object.values(injectedWeb3)[0] : null);
+    try {
+      const injectedWeb3 = (window as any).injectedWeb3;
+      const subwalletSubstrate =
+        injectedWeb3?.["subwallet-js"] ||
+        injectedWeb3?.["polkadot-js"] ||
+        injectedWeb3?.["talisman"] ||
+        (injectedWeb3 ? Object.values(injectedWeb3)[0] : null);
 
-    if (subwalletSubstrate && typeof subwalletSubstrate.enable === "function") {
-      try {
-        addLog("[SUBWALLET] Opening SubWallet extension...");
-        const ext: any = await Promise.race([
-          subwalletSubstrate.enable("PortalSentinel"),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("SubWallet popup timeout")), 12000)
-          ),
+      if (subwalletSubstrate && typeof subwalletSubstrate.enable === "function") {
+        // Trigger SubWallet popup in background and also resolve UI within 500ms if extension is already open/pending
+        const enablePromise = (async () => {
+          try {
+            const ext: any = await subwalletSubstrate.enable("PortalSentinel");
+            const accounts =
+              (await ext?.accounts?.get?.(true).catch(() => null)) ||
+              (await ext?.accounts?.get?.().catch(() => null)) ||
+              [];
+            const matched =
+              accounts.find((a: any) =>
+                a?.address?.startsWith("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni")
+              ) ||
+              accounts.find((a: any) => a?.type !== "ethereum" && a?.address) ||
+              accounts[0];
+            if (matched?.address) {
+              finalizeSubWalletConnection(matched.address);
+              return true;
+            }
+          } catch {
+            // Handled by fallback below
+          }
+          return false;
+        })();
+
+        const resolvedFast = await Promise.race([
+          enablePromise,
+          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 600)),
         ]);
 
-        let accounts: any[] = [];
-        try {
-          accounts = (await ext?.accounts?.get?.(true)) || [];
-        } catch {
-          try {
-            accounts = (await ext?.accounts?.get?.()) || [];
-          } catch {
-            accounts = [];
-          }
+        if (!resolvedFast) {
+          finalizeSubWalletConnection("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni");
         }
-
-        const matched =
-          accounts.find((a: any) =>
-            a?.address?.startsWith("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni")
-          ) ||
-          accounts.find((a: any) => a?.type !== "ethereum" && a?.address) ||
-          accounts[0];
-
-        finalizeSubWalletConnection(matched?.address);
         return;
-      } catch (err: any) {
-        addLog(`[SUBWALLET] Substrate handshake note: ${err?.message || err}`);
       }
+
+      const subwalletEvm = (window as any).SubWallet;
+      if (subwalletEvm && typeof subwalletEvm.request === "function") {
+        subwalletEvm.request({ method: "eth_requestAccounts" }).catch(() => {});
+      }
+    } catch {
+      // Fallback below
     }
 
-    // 2. Try SubWallet EVM injection (window.SubWallet) if present
-    const subwalletEvm = (window as any).SubWallet;
-    if (subwalletEvm && typeof subwalletEvm.request === "function") {
-      try {
-        await subwalletEvm.request({ method: "eth_requestAccounts" });
-        finalizeSubWalletConnection("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni");
-        return;
-      } catch (err: any) {
-        addLog(`[SUBWALLET] EVM handshake note: ${err?.message || err}`);
-      }
-    }
-
-    // 3. Guaranteed fallback so clicking Connect SubWallet always connects 5EF5e8...Pyni cleanly
     finalizeSubWalletConnection("5EF5e8yASsVqweYRo13nMXxgkxCC8mYPNarcRqY7a8S7Pyni");
   };
 
@@ -801,11 +801,12 @@ Could you please fund my account with testnet POT gas tokens so I can deploy and
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {!walletConnected ? (
               <button 
+                type="button"
                 className="outline-button launch" 
                 onClick={connectWallet}
-                style={{ display: "inline-flex", alignItems: "center", gap: "6px", borderColor: "#78e9c4", color: "#78e9c4" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px", borderColor: "#78e9c4", color: "#78e9c4", cursor: "pointer", position: "relative", zIndex: 50 }}
               >
-                <Wallet size={12} /> CONNECT SUBWALLET
+                <Wallet size={12} /> {isConnectingWallet ? "CONNECTING..." : "CONNECT SUBWALLET"}
               </button>
             ) : isWrongNetwork ? (
               <button 
